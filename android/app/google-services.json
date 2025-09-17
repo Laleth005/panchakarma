@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1097911543042",
+    "project_id": "panchakarma-991c8",
+    "storage_bucket": "panchakarma-991c8.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1097911543042:android:6d6cbd22f845e0de710e1b",
+        "android_client_info": {
+          "package_name": "com.example.panchakarma"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2p0QHgl2MeedhW763FRzSJiXNgOL7o0c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
