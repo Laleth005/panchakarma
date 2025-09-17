@@ -138,6 +138,12 @@ class FirebaseService {
       
       // Get the user data from the first document
       final userData = userQuery.docs.first.data() as Map<String, dynamic>;
+      
+      // Make sure the uid is included in the userData
+      if (!userData.containsKey('uid')) {
+        userData['uid'] = userQuery.docs.first.id;
+      }
+      
       print('Direct Firestore login successful for user: ${userData['email']}');
       
       // Return user data

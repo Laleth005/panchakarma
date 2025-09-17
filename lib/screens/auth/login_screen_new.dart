@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user_model.dart';
 import '../../services/firebase_service.dart';
 import '../admin/admin_dashboard.dart';
-import '../practitioner/practitioner_dashboard.dart';
+import '../practitioner/practitioner_home_dashboard.dart';
 import '../patient/patient_dashboard.dart';
 import 'signup_screen_new.dart';
 
@@ -36,39 +36,24 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _navigateBasedOnRole(UserRole role, {String? userId}) async {
     Widget dashboard;
     
+    // Save userId in shared preferences or similar for session persistence
+    // For this demo, we'll use a simpler approach by passing it to dashboards
+    
     switch (role) {
       case UserRole.admin:
         dashboard = const AdminDashboard();
         break;
       case UserRole.practitioner:
-        // Check if the practitioner is approved
-        if (userId != null) {
-          DocumentSnapshot practitionerDoc = await FirebaseFirestore.instance
-              .collection('practitioners')
-              .doc(userId)
-              .get();
-          
-          if (practitionerDoc.exists) {
-            Map<String, dynamic> data = practitionerDoc.data() as Map<String, dynamic>;
-            bool isApproved = data['isApproved'] ?? false;
-            
-            if (!isApproved) {
-              setState(() {
-                _isLoading = false;
-                _errorMessage = 'Your practitioner account is pending approval.';
-              });
-              await FirebaseAuth.instance.signOut();
-              return;
-            }
-          }
-        }
-        
-        dashboard = const PractitionerDashboard();
+        // Use our improved practitioner dashboard with user ID
+        dashboard = PractitionerHomeDashboard(practitionerId: userId);
         break;
       case UserRole.patient:
-        dashboard = const PatientDashboard();
+        // Pass the userId to the PatientDashboard constructor
+        dashboard = PatientDashboard(patientId: userId);
         break;
     }
+    
+    print("Navigating to ${role.toString()} dashboard with userId: $userId");
     
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => dashboard),
@@ -84,6 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     
     try {
+      print('Attempting to login with email: ${_emailController.text.trim()}');
+      
       // Sign in with email and password using our service
       final UserCredential? userCredential = await _firebaseService.signInWithEmailAndPassword(
         _emailController.text.trim(),
@@ -92,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       
       if (userCredential == null) {
         // Try direct Firestore authentication
-        print('Trying direct Firestore authentication');
+        print('Firebase Auth failed, trying direct Firestore authentication');
         final userData = await _firebaseService.authenticateWithFirestore(
           _emailController.text.trim(),
           _passwordController.text,
@@ -112,10 +99,41 @@ class _LoginScreenState extends State<LoginScreen> {
           print('Direct Firestore authentication successful: ${userData['email']}');
           final String uid = userData['uid'] as String;
           
+          // Store the user ID in local storage for later use
+          // In a real app, you would use SharedPreferences for this
+          // SharedPreferences prefs = await SharedPreferences.getInstance();
+          // prefs.setString('userId', uid);
+          
           // Get user role from our service
           UserRole? role = await _firebaseService.getUserRole(uid);
+          print('User role found: $role');
           
           if (role != null) {
+            // For patients, special handling
+            if (role == UserRole.patient) {
+              print('User is a patient, checking if patient data exists');
+              
+              // Check if the patient document exists in Firestore
+              final patientDoc = await FirebaseFirestore.instance
+                  .collection('patients')
+                  .doc(uid)
+                  .get();
+              
+              if (!patientDoc.exists) {
+                print('Patient document not found, creating it');
+                
+                // Create a basic patient document if it doesn't exist
+                await FirebaseFirestore.instance.collection('patients').doc(uid).set({
+                  'uid': uid,
+                  'email': userData['email'],
+                  'fullName': userData['fullName'] ?? 'Patient',
+                  'role': 'patient',
+                  'createdAt': FieldValue.serverTimestamp(),
+                  'updatedAt': FieldValue.serverTimestamp(),
+                });
+              }
+            }
+            
             // Navigate based on user role
             await _navigateBasedOnRole(role, userId: uid);
           } else {
@@ -137,19 +155,93 @@ class _LoginScreenState extends State<LoginScreen> {
       // Get user data from Firestore
       final User? user = userCredential.user;
       if (user != null) {
+        print('Firebase Auth successful, user UID: ${user.uid}');
+        
         // Get user role from our service
         UserRole? role = await _firebaseService.getUserRole(user.uid);
+        print('User role found: $role');
         
         if (role != null) {
+          // For patients, ensure the patient document exists
+          if (role == UserRole.patient) {
+            print('User is a patient, checking if patient data exists');
+            
+            // Check if the patient document exists
+            final patientDoc = await FirebaseFirestore.instance
+                .collection('patients')
+                .doc(user.uid)
+                .get();
+            
+            if (!patientDoc.exists) {
+              print('Patient document not found, creating it');
+              
+              // Create a basic patient document if it doesn't exist
+              await FirebaseFirestore.instance.collection('patients').doc(user.uid).set({
+                'uid': user.uid,
+                'email': user.email,
+                'fullName': user.displayName ?? 'Patient',
+                'role': 'patient',
+                'createdAt': FieldValue.serverTimestamp(),
+                'updatedAt': FieldValue.serverTimestamp(),
+              });
+            }
+          }
+          
           // Navigate based on user role using our helper method
           await _navigateBasedOnRole(role, userId: user.uid);
         } else {
-          // No role found
-          setState(() {
-            _isLoading = false;
-            _errorMessage = 'User account not found.';
+          // No role found, try to determine role based on collections
+          print('No role found, checking collections');
+          
+          // Check patients collection first
+          final patientDoc = await FirebaseFirestore.instance
+              .collection('patients')
+              .doc(user.uid)
+              .get();
+          
+          if (patientDoc.exists) {
+            print('Found user in patients collection');
+            await _navigateBasedOnRole(UserRole.patient, userId: user.uid);
+            return;
+          }
+          
+          // Check practitioners
+          final practitionerDoc = await FirebaseFirestore.instance
+              .collection('practitioners')
+              .doc(user.uid)
+              .get();
+          
+          if (practitionerDoc.exists) {
+            print('Found user in practitioners collection');
+            await _navigateBasedOnRole(UserRole.practitioner, userId: user.uid);
+            return;
+          }
+          
+          // Check admins
+          final adminDoc = await FirebaseFirestore.instance
+              .collection('admins')
+              .doc(user.uid)
+              .get();
+          
+          if (adminDoc.exists) {
+            print('Found user in admins collection');
+            await _navigateBasedOnRole(UserRole.admin, userId: user.uid);
+            return;
+          }
+          
+          // If we get here, user exists in Firebase Auth but not in Firestore
+          // Create a patient account by default
+          print('Creating new patient account for user');
+          await FirebaseFirestore.instance.collection('patients').doc(user.uid).set({
+            'uid': user.uid,
+            'email': user.email,
+            'fullName': user.displayName ?? 'Patient',
+            'role': 'patient',
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           });
-          await _firebaseService.signOut();
+          
+          await _navigateBasedOnRole(UserRole.patient, userId: user.uid);
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -167,12 +259,13 @@ class _LoginScreenState extends State<LoginScreen> {
           _errorMessage = 'Login failed: ${e.message}';
         }
       });
+      print('Firebase Auth Exception: ${e.code} - ${e.message}');
     } catch (e) {
       setState(() {
         _isLoading = false;
         _errorMessage = 'Login failed. Please try again later.';
       });
-      print(e);
+      print('Unexpected error during login: $e');
     }
   }
 

@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/practitioner_model.dart';
-import '../auth/login_screen.dart';
+import '../auth/login_screen_new.dart';
 import 'appointments_screen.dart';
 import 'patients_screen.dart';
 import 'practitioner_profile_screen.dart';
 
-class PractitionerDashboard extends StatefulWidget {
-  const PractitionerDashboard({Key? key}) : super(key: key);
+class PractitionerDashboardNew extends StatefulWidget {
+  const PractitionerDashboardNew({Key? key}) : super(key: key);
 
   @override
-  _PractitionerDashboardState createState() => _PractitionerDashboardState();
+  _PractitionerDashboardNewState createState() => _PractitionerDashboardNewState();
 }
 
-class _PractitionerDashboardState extends State<PractitionerDashboard> {
+class _PractitionerDashboardNewState extends State<PractitionerDashboardNew> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
@@ -32,6 +32,67 @@ class _PractitionerDashboardState extends State<PractitionerDashboard> {
   void initState() {
     super.initState();
     _loadDashboardData();
+  }
+
+  // No approval process needed
+
+  // Sign out method
+  Future<void> _signOut() async {
+    try {
+      await _auth.signOut();
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error signing out: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to sign out. Please try again.')),
+      );
+    }
+  }
+  
+  // Show logout confirmation dialog
+  Future<void> _showLogoutConfirmation() async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Logout Confirmation'),
+          content: Text('Are you sure you want to logout?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(false); // Cancel
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(true); // Confirm logout
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+    
+    if (result == true) {
+      await _signOut();
+    } else {
+      // Reset the bottom navigation to Home
+      setState(() {
+        _selectedIndex = 0;
+      });
+    }
   }
 
   Future<void> _loadDashboardData() async {
@@ -94,65 +155,6 @@ class _PractitionerDashboardState extends State<PractitionerDashboard> {
       print('Error loading dashboard data: $e');
       setState(() {
         _isLoading = false;
-      });
-    }
-  }
-
-  // Sign out method
-  Future<void> _signOut() async {
-    try {
-      await _auth.signOut();
-      // Navigate to login screen
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginScreen()),
-          (route) => false,
-        );
-      }
-    } catch (e) {
-      print('Error signing out: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to sign out. Please try again.')),
-      );
-    }
-  }
-  
-  // Show logout confirmation dialog
-  Future<void> _showLogoutConfirmation() async {
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Logout Confirmation'),
-          content: Text('Are you sure you want to logout?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(false); // Cancel
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(true); // Confirm logout
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.red,
-              ),
-              child: Text('Logout'),
-            ),
-          ],
-        );
-      },
-    );
-    
-    if (result == true) {
-      await _signOut();
-    } else {
-      // Reset the bottom navigation to Home
-      setState(() {
-        _selectedIndex = 0;
       });
     }
   }

@@ -124,7 +124,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               title: Text('Practitioner Management'),
               onTap: () {
                 Navigator.pop(context);
-                // Navigate to practitioner management screen
+                // Removed practitioner approval screen as it's no longer needed
               },
             ),
             ListTile(

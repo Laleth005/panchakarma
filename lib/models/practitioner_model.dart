@@ -5,7 +5,6 @@ class PractitionerModel extends UserModel {
   final String? qualification;
   final String? experience;
   final String? bio;
-  final bool isApproved;
   
   PractitionerModel({
     required super.uid,
@@ -15,7 +14,6 @@ class PractitionerModel extends UserModel {
     this.qualification,
     this.experience,
     this.bio,
-    this.isApproved = false,
     super.phoneNumber,
     super.profileImageUrl,
     required super.createdAt,
@@ -23,21 +21,46 @@ class PractitionerModel extends UserModel {
   }) : super(role: UserRole.practitioner);
   
   factory PractitionerModel.fromJson(Map<String, dynamic> json) {
-    final userModel = UserModel.fromJson(json);
-    return PractitionerModel(
-      uid: userModel.uid,
-      email: userModel.email,
-      fullName: userModel.fullName,
-      specialties: List<String>.from(json['specialties'] ?? []),
-      qualification: json['qualification'] as String?,
-      experience: json['experience'] as String?,
-      bio: json['bio'] as String?,
-      isApproved: json['isApproved'] as bool? ?? false,
-      phoneNumber: userModel.phoneNumber,
-      profileImageUrl: userModel.profileImageUrl,
-      createdAt: userModel.createdAt,
-      updatedAt: userModel.updatedAt,
-    );
+    try {
+      final userModel = UserModel.fromJson(json);
+      
+      // Handle specialties more safely
+      List<String> specialties = [];
+      if (json['specialties'] != null) {
+        if (json['specialties'] is List) {
+          specialties = List<String>.from(
+            (json['specialties'] as List).map((item) => item.toString())
+          );
+        }
+      }
+      
+      return PractitionerModel(
+        uid: userModel.uid,
+        email: userModel.email,
+        fullName: userModel.fullName,
+        specialties: specialties,
+        qualification: json['qualification'] as String?,
+        experience: json['experience'] as String?,
+        bio: json['bio'] as String?,
+        phoneNumber: userModel.phoneNumber,
+        profileImageUrl: userModel.profileImageUrl,
+        createdAt: userModel.createdAt,
+        updatedAt: userModel.updatedAt,
+      );
+    } catch (e) {
+      print('Error in PractitionerModel.fromJson: $e');
+      print('JSON data: $json');
+      
+      // Create a minimal valid practitioner model with default values
+      return PractitionerModel(
+        uid: json['uid'] as String? ?? 'unknown',
+        email: json['email'] as String? ?? 'unknown@example.com',
+        fullName: json['fullName'] as String? ?? 'Unknown Doctor',
+        specialties: [],
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+    }
   }
   
   @override
@@ -48,7 +71,6 @@ class PractitionerModel extends UserModel {
       'qualification': qualification,
       'experience': experience,
       'bio': bio,
-      'isApproved': isApproved,
     });
     return json;
   }

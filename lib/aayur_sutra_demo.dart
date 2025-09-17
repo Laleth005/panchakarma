@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'firebase_options.dart';
-import 'services/firebase_service.dart';
-import 'screens/auth/login_screen_new.dart' as new_login;
-import 'screens/auth/signup_screen_new.dart';
-import 'screens/practitioner/practitioner_home_dashboard.dart';
-import 'screens/patient/consulting_page.dart';
+import 'screens/practitioner/practitioner_dashboard_new.dart';
+
+// This is just for demonstration - in your real app, you would integrate this
+// with your existing main.dart authentication flow
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,27 +21,24 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // Configure Firebase Auth to disable reCAPTCHA for testing
-  await FirebaseService.initializeAuth();
-  
-  runApp(const PanchakarmaApp());
+  runApp(const AayurSutraApp());
 }
 
-class PanchakarmaApp extends StatelessWidget {
-  const PanchakarmaApp({super.key});
+class AayurSutraApp extends StatelessWidget {
+  const AayurSutraApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Panchakarma Management',
+      title: 'Aayur Sutra',
       theme: ThemeData(
         primarySwatch: Colors.green,
-        primaryColor: Colors.green.shade600,
+        primaryColor: Color(0xFF2E7D32),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.green,
-          primary: Colors.green.shade600,
-          secondary: Colors.teal,
+          seedColor: Color(0xFF2E7D32),
+          primary: Color(0xFF2E7D32),
+          secondary: Color(0xFF388E3C),
         ),
         inputDecorationTheme: InputDecorationTheme(
           border: OutlineInputBorder(
@@ -55,7 +51,7 @@ class PanchakarmaApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.green.shade500, width: 2),
+            borderSide: BorderSide(color: Color(0xFF2E7D32), width: 2),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -67,52 +63,36 @@ class PanchakarmaApp extends StatelessWidget {
           ),
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         elevatedButtonTheme: ElevatedButtonThemeData(
           style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.green.shade600,
+            backgroundColor: Color(0xFF2E7D32),
             foregroundColor: Colors.white,
             elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 16),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
             ),
-            textStyle: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            minimumSize: Size(double.infinity, 50),
           ),
         ),
         textButtonTheme: TextButtonThemeData(
           style: TextButton.styleFrom(
-            foregroundColor: Colors.green.shade700,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            textStyle: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
+            foregroundColor: Color(0xFF2E7D32),
           ),
         ),
-        outlinedButtonTheme: OutlinedButtonThemeData(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: Colors.green.shade700,
-            side: BorderSide(color: Colors.green.shade600),
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+        scaffoldBackgroundColor: Colors.grey.shade100,
+        appBarTheme: AppBarTheme(
+          backgroundColor: Color(0xFF2E7D32),
+          elevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
           ),
         ),
-        fontFamily: 'Poppins',
       ),
-      home: const new_login.LoginScreen(),
-      routes: {
-        '/login': (context) => const new_login.LoginScreen(),
-        '/signup': (context) => const SignupScreen(),
-        '/practitioner/dashboard': (context) => const PractitionerHomeDashboard(),
-        '/consulting': (context) => const ConsultingPage(),
-        // We'll add more routes as we create the corresponding screens
-      },
+      // For demo purposes, directly showing the practitioner dashboard
+      home: PractitionerDashboardNew(),
     );
   }
 }

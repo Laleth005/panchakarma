@@ -97,7 +97,6 @@ class _SignupScreenState extends State<SignupScreen> {
             'qualification': _qualificationController.text.trim(),
             'experience': _experienceController.text.trim(),
             'bio': _bioController.text.trim(),
-            'isApproved': false,
           };
           break;
         case UserRole.patient:
@@ -182,14 +181,16 @@ class _SignupScreenState extends State<SignupScreen> {
   
   // Helper method to show success message and navigate
   void showSuccessAndNavigate(String message) {
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 5),
       ),
     );
     
-    // Navigate back to login screen
+    // Navigate directly to login screen
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
