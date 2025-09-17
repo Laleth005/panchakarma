@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'firebase_options.dart';
-import 'screens/auth/login_screen.dart';
-import 'screens/auth/signup_screen.dart';
+import 'services/firebase_service.dart';
+import 'screens/auth/login_screen_new.dart';
+import 'screens/auth/signup_screen_new.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,9 +15,13 @@ void main() async {
     DeviceOrientation.portraitDown,
   ]);
   
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  
+  // Configure Firebase Auth to disable reCAPTCHA for testing
+  await FirebaseService.initializeAuth();
   
   runApp(const PanchakarmaApp());
 }

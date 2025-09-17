@@ -34,8 +34,16 @@ class UserModel {
       ),
       phoneNumber: json['phoneNumber'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      updatedAt: (json['updatedAt'] as Timestamp).toDate(),
+      createdAt: (json['createdAt'] != null) 
+          ? (json['createdAt'] is Timestamp 
+              ? (json['createdAt'] as Timestamp).toDate() 
+              : DateTime.parse(json['createdAt'].toString()))
+          : DateTime.now(),
+      updatedAt: (json['updatedAt'] != null) 
+          ? (json['updatedAt'] is Timestamp 
+              ? (json['updatedAt'] as Timestamp).toDate() 
+              : DateTime.parse(json['updatedAt'].toString()))
+          : DateTime.now(),
     );
   }
 
@@ -47,7 +55,7 @@ class UserModel {
       'role': role.toString().split('.').last,
       'phoneNumber': phoneNumber,
       'profileImageUrl': profileImageUrl,
-      'createdAt': Timestamp.fromDate(createdAt),
+      'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
   }
