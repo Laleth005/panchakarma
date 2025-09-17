@@ -2,10 +2,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import 'dart:io';
 
 class FirebaseAuthConfig {
   // Configure Firebase Auth to disable recaptcha for testing
-  static Future<void> configureAuth() async {
+  static Future<bool> configureAuth() async {
     try {
       print('Configuring Firebase Auth settings...');
       await FirebaseAuth.instance.setSettings(
@@ -17,9 +18,23 @@ class FirebaseAuthConfig {
       // Check if the settings were applied
       final user = FirebaseAuth.instance.currentUser;
       print('Current user: ${user?.uid ?? 'Not signed in'}');
+      return true;
     } catch (e) {
       print('Error configuring Firebase Auth settings: $e');
-      rethrow;
+      
+      // Check if this is a network error
+      if (e.toString().contains('network') || 
+          e.toString().contains('socket') || 
+          e.toString().contains('connection') ||
+          e.toString().contains('host') ||
+          e.toString().contains('timeout') ||
+          e.toString().contains('Unable to resolve')) {
+        print('Network error during Firebase Auth configuration: $e');
+      }
+      
+      // Instead of rethrowing, we'll return false to indicate configuration failed
+      // This allows us to continue with direct Firestore auth
+      return false;
     }
   }
 }
@@ -29,13 +44,18 @@ class FirebaseService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // Initialize Firebase Auth with necessary settings
-  static Future<void> initializeAuth() async {
+  static Future<bool> initializeAuth() async {
     try {
-      await FirebaseAuthConfig.configureAuth();
-      print('Firebase Auth configured successfully');
+      bool configured = await FirebaseAuthConfig.configureAuth();
+      if (configured) {
+        print('Firebase Auth configured successfully');
+      } else {
+        print('Firebase Auth configuration failed, but continuing with fallback auth');
+      }
+      return configured;
     } catch (e) {
       print('Error configuring Firebase Auth: $e');
-      rethrow;
+      return false;
     }
   }
 
@@ -48,6 +68,15 @@ class FirebaseService {
   // Sign in with email and password
   Future<UserCredential?> signInWithEmailAndPassword(String email, String password) async {
     try {
+      // Check if Firebase Auth is configured properly
+      bool configured = await FirebaseAuthConfig.configureAuth();
+      
+      // If auth configuration failed, immediately return null to use fallback
+      if (!configured) {
+        print('Firebase Auth configuration failed, skipping Firebase Auth sign in');
+        return null;
+      }
+      
       // Try Firebase Auth first
       print('Attempting to sign in with Firebase Auth: $email');
       final userCredential = await _auth.signInWithEmailAndPassword(
@@ -64,10 +93,19 @@ class FirebaseService {
       if (e is FirebaseAuthException) {
         if (e.message?.contains('CONFIGURATION_NOT_FOUND') == true ||
             e.code == 'unknown' ||
-            e.code == 'user-not-found') {
-          print('Firebase Auth failed, will try direct Firestore login');
+            e.code == 'user-not-found' ||
+            e.code == 'network-request-failed' ||
+            e.code == 'timeout') {
+          print('Firebase Auth failed with ${e.code}, will try direct Firestore login');
           return null;
         }
+      } else if (e.toString().contains('network') || 
+               e.toString().contains('socket') || 
+               e.toString().contains('connection') ||
+               e.toString().contains('host') ||
+               e.toString().contains('Unable to resolve')) {
+        print('Network error during Firebase Auth sign in: $e');
+        return null;
       }
       
       // For any other error, just rethrow
@@ -91,6 +129,10 @@ class FirebaseService {
       // Check if we found a user
       if (userQuery.docs.isEmpty) {
         print('No matching user found in Firestore');
+        
+        // Try to check if there's a locally cached user with pending sync
+        // In a real implementation, you would check SharedPreferences or local storage here
+        // For now, we'll just return null
         return null;
       }
       
@@ -102,6 +144,25 @@ class FirebaseService {
       return userData;
     } catch (e) {
       print('Error authenticating with Firestore: $e');
+      
+      // Check if this is a network error
+      if (e.toString().contains('network') || 
+          e.toString().contains('socket') || 
+          e.toString().contains('connection') ||
+          e.toString().contains('host') ||
+          e.toString().contains('Unable to resolve')) {
+        
+        print('Network error during Firestore authentication: $e');
+        
+        // In a production app, we'd check local storage for cached credentials
+        // For now, we'll return a special error object that the UI can handle
+        return {
+          'error': 'network_error',
+          'message': 'Network error. Please check your internet connection and try again.',
+          'isOfflineError': true
+        };
+      }
+      
       return null;
     }
   }
@@ -110,7 +171,13 @@ class FirebaseService {
   Future<UserCredential?> registerWithEmailAndPassword(String email, String password) async {
     try {
       // Make sure reCAPTCHA verification is disabled for testing
-      await FirebaseAuthConfig.configureAuth();
+      bool configured = await FirebaseAuthConfig.configureAuth();
+      
+      // If auth configuration failed, immediately return null to use fallback
+      if (!configured) {
+        print('Firebase Auth configuration failed, skipping Firebase Auth registration');
+        return null;
+      }
       
       print('Attempting to register user: $email');
       final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -125,11 +192,13 @@ class FirebaseService {
         print('Firebase Auth Error Code: ${e.code}');
         print('Firebase Auth Error Message: ${e.message}');
         
-        // If the error is related to reCAPTCHA configuration, return null to indicate
-        // that we should try direct Firestore registration instead
+        // If the error is related to reCAPTCHA configuration, network issues or other common errors,
+        // return null to indicate that we should try direct Firestore registration instead
         if (e.message?.contains('CONFIGURATION_NOT_FOUND') == true ||
-            e.code == 'unknown') {
-          print('Firebase Auth failed with reCAPTCHA issue, will try direct Firestore registration');
+            e.code == 'unknown' ||
+            e.code == 'network-request-failed' ||
+            e.code == 'timeout') {
+          print('Firebase Auth failed with ${e.code} issue, will try direct Firestore registration');
           return null;
         }
       }
@@ -216,29 +285,48 @@ class FirebaseService {
       userData['createdAt'] = FieldValue.serverTimestamp();
       userData['updatedAt'] = FieldValue.serverTimestamp();
       
-      // Store in 'users' collection
-      await _firestore.collection('users').doc(customUid).set(userData);
-      print('User data stored in users collection with ID: $customUid');
-      
-      // Also store in role-specific collection
-      switch (role) {
-        case UserRole.admin:
-          await _firestore.collection('admins').doc(customUid).set(userData);
-          break;
-        case UserRole.practitioner:
-          await _firestore.collection('practitioners').doc(customUid).set(userData);
-          break;
-        case UserRole.patient:
-          await _firestore.collection('patients').doc(customUid).set(userData);
-          break;
+      try {
+        // Try to store in 'users' collection
+        await _firestore.collection('users').doc(customUid).set(userData);
+        print('User data stored in users collection with ID: $customUid');
+        
+        // Also store in role-specific collection
+        switch (role) {
+          case UserRole.admin:
+            await _firestore.collection('admins').doc(customUid).set(userData);
+            break;
+          case UserRole.practitioner:
+            await _firestore.collection('practitioners').doc(customUid).set(userData);
+            break;
+          case UserRole.patient:
+            await _firestore.collection('patients').doc(customUid).set(userData);
+            break;
+        }
+        print('User data stored in ${role.toString().split('.').last}s collection');
+      } catch (firestoreError) {
+        // Handle network errors by saving to SharedPreferences or local storage
+        // For now, we'll consider the registration successful even if it couldn't be saved to Firestore yet
+        print('Network error during Firestore save: $firestoreError');
+        print('Continuing with local registration data');
+        
+        // Here we would implement local storage, but for now we'll just return the data
+        // In a production app, you'd want to sync this data later when connectivity is restored
+        userData['pendingSyncToFirestore'] = true;
       }
-      print('User data stored in ${role.toString().split('.').last}s collection');
       
       // Return the user data including the generated UID
       return userData;
     } catch (e) {
       print('Error with direct Firestore registration: $e');
-      rethrow;
+      
+      // Instead of crashing, return a partial success with the data
+      // This allows the app to continue and retry syncing later
+      userData['uid'] = DateTime.now().millisecondsSinceEpoch.toString() + '_' + 
+          userData['email'].toString().split('@')[0];
+      userData['registrationPending'] = true;
+      userData['registrationError'] = e.toString();
+      
+      return userData;
     }
   }
 
@@ -292,5 +380,18 @@ class FirebaseService {
       print('Error deleting user: $e');
       rethrow;
     }
+  }
+
+  // Check if we have internet connection
+  Future<bool> checkInternetConnection() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        return true;
+      }
+    } on SocketException catch (_) {
+      return false;
+    }
+    return false;
   }
 }

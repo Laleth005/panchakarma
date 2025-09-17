@@ -99,6 +99,15 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         
         if (userData != null) {
+          // Check if this is a network error response
+          if (userData.containsKey('isOfflineError') && userData['isOfflineError'] == true) {
+            setState(() {
+              _errorMessage = userData['message'] as String;
+              _isLoading = false;
+            });
+            return;
+          }
+          
           // Direct Firestore authentication succeeded
           print('Direct Firestore authentication successful: ${userData['email']}');
           final String uid = userData['uid'] as String;

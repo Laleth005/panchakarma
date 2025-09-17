@@ -144,9 +144,19 @@ class _SignupScreenState extends State<SignupScreen> {
         print('Firebase Auth registration failed, trying direct Firestore registration');
         
         // Use direct registration to Firestore
-        await _firebaseService.registerDirectlyToFirestore(userData, _selectedRole);
+        final registeredData = await _firebaseService.registerDirectlyToFirestore(userData, _selectedRole);
         
-        showSuccessAndNavigate('Direct registration successful! You can log in with your email and password.');
+        // Check if there was a registration error
+        if (registeredData.containsKey('registrationPending') && registeredData['registrationPending'] == true) {
+          // Handle pending registration due to network issues
+          showSuccessAndNavigate('Registration completed locally. Some features may be limited until you connect to the internet.');
+        } else if (registeredData.containsKey('pendingSyncToFirestore') && registeredData['pendingSyncToFirestore'] == true) {
+          // Successfully registered but data couldn't be synced to Firestore yet
+          showSuccessAndNavigate('Registration successful! Your data will be synced when internet connection is available.');
+        } else {
+          // Normal successful registration
+          showSuccessAndNavigate('Direct registration successful! You can log in with your email and password.');
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {

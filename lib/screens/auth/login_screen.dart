@@ -92,6 +92,8 @@ class _LoginScreenState extends State<LoginScreen> {
     
     try {
       // Configure Firebase Auth settings
+      // We don't need to check the return value here since the signInWithEmailAndPassword
+      // method already handles the configuration failure
       await FirebaseService.initializeAuth();
       
       String email = _emailController.text.trim();
