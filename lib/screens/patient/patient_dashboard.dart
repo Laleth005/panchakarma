@@ -296,9 +296,14 @@ class _PatientDashboardState extends State<PatientDashboard> {
       // Filter in memory to avoid needing composite indexes
       final now = DateTime.now();
       final scheduledAppointments = appointmentSnapshot.docs
-          .map((doc) => doc.data()..['id'] = doc.id)
+          .map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return data;
+          })
           .where((data) => 
               data['status'] == 'scheduled' && 
+              data['appointmentDate'] != null &&
               (data['appointmentDate'] as Timestamp).toDate().isAfter(now))
           .toList();
       

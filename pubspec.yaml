@@ -45,6 +45,9 @@ dependencies:
   
   # Charts and graphs
   fl_chart: ^0.66.2
+  
+  # UI components
+  carousel_slider: ^4.2.1
 
 dev_dependencies:
   flutter_test:
