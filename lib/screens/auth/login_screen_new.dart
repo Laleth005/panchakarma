@@ -61,7 +61,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<UserModel?> _fetchUserData(String uid) async {
     try {
-      // First check the users collection for basic info
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -71,7 +70,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
         String role = userData['role'] ?? 'patient';
         
-        // Then fetch detailed data from role-specific collection
         DocumentSnapshot roleDoc;
         if (role == 'practitioner') {
           roleDoc = await FirebaseFirestore.instance
@@ -87,14 +85,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         
         if (roleDoc.exists) {
           Map<String, dynamic> roleData = roleDoc.data() as Map<String, dynamic>;
-          // Merge basic user data with role-specific data
           userData.addAll(roleData);
         }
         
         return UserModel.fromFirestore(userData);
       }
       
-      // Fallback: check role-specific collections directly
       DocumentSnapshot patientDoc = await FirebaseFirestore.instance
           .collection('patients')
           .doc(uid)
@@ -128,11 +124,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         dashboard = const AdminDashboard();
         break;
       case UserRole.practitioner:
-        // Check if practitioner is approved
-        if (user.isApproved != true) {
-          _showApprovalPendingDialog();
-          return;
-        }
+        // 🔴 Approval check commented out, practitioners can log in directly
+        // if (user.isApproved != true) {
+        //   _showApprovalPendingDialog();
+        //   return;
+        // }
         dashboard = PractitionerHomeDashboard(practitionerId: user.uid);
         break;
       case UserRole.patient:
@@ -223,12 +219,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     );
   }
 
-  // Find user in Firestore by email (new method for direct Firestore auth)
   Future<UserModel?> _getUserByEmail(String email) async {
     try {
       print('Searching for user with email: $email');
       
-      // Search in users collection
       QuerySnapshot userQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: email)
@@ -239,22 +233,18 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         Map<String, dynamic> userData = userQuery.docs.first.data() as Map<String, dynamic>;
         String uid = userQuery.docs.first.id;
         
-        // Make sure password matches
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
         
-        // Set the uid if it's not there
         userData['uid'] = uid;
-        
         print('User found in users collection: $uid');
         return UserModel.fromFirestore(userData);
       }
       
       print('User not found in users collection, checking role-specific collections');
       
-      // Try practitioners collection
       QuerySnapshot practitionerQuery = await FirebaseFirestore.instance
           .collection('practitioners')
           .where('email', isEqualTo: email)
@@ -265,20 +255,16 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         Map<String, dynamic> userData = practitionerQuery.docs.first.data() as Map<String, dynamic>;
         String uid = practitionerQuery.docs.first.id;
         
-        // Make sure password matches
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
         
-        // Set the uid if it's not there
         userData['uid'] = uid;
-        
         print('User found in practitioners collection: $uid');
         return UserModel.fromFirestore(userData);
       }
       
-      // Try patients collection
       QuerySnapshot patientQuery = await FirebaseFirestore.instance
           .collection('patients')
           .where('email', isEqualTo: email)
@@ -289,15 +275,12 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         Map<String, dynamic> userData = patientQuery.docs.first.data() as Map<String, dynamic>;
         String uid = patientQuery.docs.first.id;
         
-        // Make sure password matches
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
         
-        // Set the uid if it's not there
         userData['uid'] = uid;
-        
         print('User found in patients collection: $uid');
         return UserModel.fromFirestore(userData);
       }
@@ -319,30 +302,27 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
     });
     
     try {
-      // Try to find the user in Firestore by email
       final UserModel? user = await _getUserByEmail(_emailController.text.trim());
       
       if (user != null) {
         print('User found, proceeding with login');
         
-        // Update last login timestamp
         await _updateLastLogin(user.uid, user.role);
         
-        // Navigate to appropriate dashboard based on user role
         if (user.role == UserRole.admin) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const AdminDashboard()),
           );
         } else if (user.role == UserRole.practitioner) {
-          // For practitioners, check if they're approved
-          if (user.isApproved != null && !user.isApproved!) {
-            setState(() {
-              _isLoading = false;
-              _errorMessage = 'Your practitioner account is pending approval. Please check back later.';
-            });
-            return;
-          }
+          // 🔴 Approval check commented out
+          // if (user.isApproved != null && !user.isApproved!) {
+          //   setState(() {
+          //     _isLoading = false;
+          //     _errorMessage = 'Your practitioner account is pending approval. Please check back later.';
+          //   });
+          //   return;
+          // }
           
           Navigator.pushReplacement(
             context,
@@ -355,7 +335,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           );
         }
       } else {
-        // User not found or wrong password
         setState(() {
           _isLoading = false;
           _errorMessage = 'Invalid email or password. Please try again.';
@@ -381,7 +360,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         'updatedAt': FieldValue.serverTimestamp(),
       });
       
-      // Also update the users collection
       await FirebaseFirestore.instance
           .collection('users')
           .doc(uid)
@@ -391,7 +369,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       });
     } catch (e) {
       print('Error updating last login: $e');
-      // Don't block login if this fails
     }
   }
 
@@ -403,7 +380,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // Header Section
               FadeTransition(
                 opacity: _fadeAnimation,
                 child: Container(
@@ -434,7 +410,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   ),
                   child: Stack(
                     children: [
-                      // Decorative background elements
                       Positioned(
                         top: -50,
                         right: -50,
@@ -459,12 +434,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           ),
                         ),
                       ),
-                      // Main content
                       Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            // App Icon
                             Container(
                               padding: EdgeInsets.all(16),
                               decoration: BoxDecoration(
@@ -485,7 +458,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ),
                             SizedBox(height: 20),
-                            // App Name
                             Text(
                               'AyurSutra',
                               style: TextStyle(
@@ -512,7 +484,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                 ),
               ),
               
-              // Login Form
               SlideTransition(
                 position: _slideAnimation,
                 child: FadeTransition(
@@ -526,7 +497,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         children: [
                           SizedBox(height: 20),
                           
-                          // Welcome Text
                           Text(
                             'Welcome Back',
                             style: TextStyle(
@@ -550,7 +520,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           
                           SizedBox(height: 32),
                           
-                          // Error Message
                           if (_errorMessage != null)
                             Container(
                               padding: EdgeInsets.all(16),
@@ -574,7 +543,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ),
                           
-                          // Email Field
                           _buildTextField(
                             controller: _emailController,
                             label: 'Email Address',
@@ -589,7 +557,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             },
                           ),
                           
-                          // Password Field
                           _buildTextField(
                             controller: _passwordController,
                             label: 'Password',
@@ -608,7 +575,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             },
                           ),
                           
-                          // Forgot Password Link
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -632,7 +598,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           
                           SizedBox(height: 24),
                           
-                          // Login Button
                           ElevatedButton(
                             onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
@@ -671,7 +636,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           
                           SizedBox(height: 24),
                           
-                          // Register Link
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -701,7 +665,6 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                           
                           SizedBox(height: 32),
                           
-                          // Footer
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [

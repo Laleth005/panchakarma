@@ -16,17 +16,39 @@ class PatientDashboard extends StatefulWidget {
   _PatientDashboardState createState() => _PatientDashboardState();
 }
 
-class _PatientDashboardState extends State<PatientDashboard> {
+class _PatientDashboardState extends State<PatientDashboard> with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
   PatientModel? _patientData;
   Map<String, dynamic>? _nextAppointment;
   bool _isLoading = true;
   int _currentIndex = 0;
+  late AnimationController _fadeController;
+  late Animation<double> _fadeAnimation;
+
+  // Enhanced color palette for AyurSutra
+  static const Color primaryGreen = Color(0xFF1B5E20);
+  static const Color accentGreen = Color(0xFF2E7D32);
+  static const Color lightGreen = Color(0xFF4CAF50);
+  static const Color surfaceGreen = Color(0xFFE8F5E8);
+  static const Color backgroundGreen = Color(0xFFF1F8E9);
 
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      duration: Duration(milliseconds: 1500),
+      vsync: this,
+    );
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut),
+    );
     _loadPatientData();
+  }
+
+  @override
+  void dispose() {
+    _fadeController.dispose();
+    super.dispose();
   }
 
   // Helper method to create a PatientModel from Firestore data
@@ -106,6 +128,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
               _isLoading = false;
             });
             
+            _fadeController.forward();
+            
             // Safe null check before calling fetchNextAppointment
             if (userId != null) {
               await _fetchNextAppointment(userId);
@@ -128,6 +152,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
           _patientData = userData;
           _isLoading = false;
         });
+        
+        _fadeController.forward();
         
         // Now try to fetch next appointment
         await _fetchNextAppointment(userData.uid);
@@ -170,6 +196,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
               _isLoading = false;
             });
             
+            _fadeController.forward();
+            
             await _fetchNextAppointment(firebaseUser.uid);
             return;
           } else {
@@ -200,29 +228,12 @@ class _PatientDashboardState extends State<PatientDashboard> {
               _isLoading = false;
             });
             
+            _fadeController.forward();
+            
             return;
           }
         } catch (firestoreError) {
           print("Error fetching patient doc from Firestore: $firestoreError");
-        }
-      } else {
-        // Step 2.5: Try to get user ID from the authenticated session
-        print("No Firebase Auth user, checking auth state");
-        
-        // Check if there's user information in Firestore's authentication data
-        try {
-          final userQuery = await FirebaseFirestore.instance
-              .collection('users')
-              .limit(20)
-              .get();
-              
-          print("Found ${userQuery.docs.length} users in Firestore users collection");
-          
-          for (final doc in userQuery.docs) {
-            print("Checking user: ${doc.id} - ${doc.data()['email']}");
-          }
-        } catch (e) {
-          print("Error listing users: $e");
         }
       }
       
@@ -262,6 +273,8 @@ class _PatientDashboardState extends State<PatientDashboard> {
           _isLoading = false;
         });
         
+        _fadeController.forward();
+        
         return;
       } catch (e) {
         print("Error creating demo patient: $e");
@@ -273,8 +286,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
         _isLoading = false;
       });
       
-      // Show a simplified UI with a retry button instead of error dialog
-      // This will display in the build method when _patientData is null
     } catch (e) {
       print('Error in _loadPatientData: $e');
       setState(() {
@@ -282,8 +293,6 @@ class _PatientDashboardState extends State<PatientDashboard> {
       });
     }
   }
-  
-  // No replacement - removing unused method
   
   Future<void> _fetchNextAppointment(String patientId) async {
     try {
@@ -316,18 +325,11 @@ class _PatientDashboardState extends State<PatientDashboard> {
       
       if (scheduledAppointments.isNotEmpty) {
         setState(() {
-          _nextAppointment = appointmentSnapshot.docs[0].data();
+          _nextAppointment = scheduledAppointments[0];
         });
       }
-      
-      setState(() {
-        _isLoading = false;
-      });
     } catch (e) {
       print('Error fetching appointment: $e');
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
@@ -343,64 +345,46 @@ class _PatientDashboardState extends State<PatientDashboard> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: Colors.grey[100],
-        body: Center(
-          child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-        ),
-      );
-    }
-    
-    // Handle the case when patient data couldn't be loaded
-    if (_patientData == null) {
-      return Scaffold(
-        backgroundColor: Colors.grey[100],
-        appBar: AppBar(
-          title: Text(
-            'Ayur Sutra',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          backgroundColor: Color(0xFF2E7D32),
-        ),
+        backgroundColor: backgroundGreen,
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 80,
-                color: Color(0xFF2E7D32),
-              ),
-              SizedBox(height: 20),
-              Text(
-                'Could not load patient data',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryGreen.withOpacity(0.2),
+                      blurRadius: 20,
+                      spreadRadius: 5,
+                    ),
+                  ],
+                ),
+                child: CircularProgressIndicator(
+                  color: primaryGreen,
+                  strokeWidth: 3,
                 ),
               ),
-              SizedBox(height: 10),
+              SizedBox(height: 24),
               Text(
-                'Please try logging in again',
+                'AyurSutra',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: primaryGreen,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Loading your wellness journey...',
                 style: TextStyle(
                   fontSize: 16,
-                ),
-              ),
-              SizedBox(height: 30),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF2E7D32),
-                  padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                ),
-                onPressed: _signOut,
-                child: Text(
-                  'Return to Login',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                  ),
+                  color: accentGreen,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
             ],
@@ -408,228 +392,813 @@ class _PatientDashboardState extends State<PatientDashboard> {
         ),
       );
     }
-
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: Text(
-          'Ayur Sutra',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+    
+    // Handle the case when patient data couldn't be loaded
+    if (_patientData == null) {
+      return Scaffold(
+        backgroundColor: backgroundGreen,
+        appBar: _buildAppBar(),
+        body: Center(
+          child: Container(
+            margin: EdgeInsets.all(24),
+            padding: EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryGreen.withOpacity(0.1),
+                  blurRadius: 20,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: surfaceGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.healing,
+                    size: 60,
+                    color: primaryGreen,
+                  ),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Connection Issue',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: primaryGreen,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  'We couldn\'t load your wellness profile.\nPlease try signing in again.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    height: 1.5,
+                  ),
+                ),
+                SizedBox(height: 32),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 8,
+                  ),
+                  onPressed: _signOut,
+                  child: Text(
+                    'Return to Login',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        backgroundColor: Color(0xFF2E7D32), // Dark green color
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notifications_outlined, color: Colors.white),
-            onPressed: () {
-              // Navigate to notifications screen
-            },
-            tooltip: 'Notifications',
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: backgroundGreen,
+      appBar: _buildAppBar(),
+      drawer: _buildDrawer(),
+      body: FadeTransition(
+        opacity: _fadeAnimation,
+        child: SingleChildScrollView(
+          physics: BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              // Hero Section
+              _buildHeroSection(),
+              
+              // Main Content
+              Padding(
+                padding: EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Next appointment reminder
+                    if (_nextAppointment != null) ...[
+                      _buildNextAppointmentCard(),
+                      SizedBox(height: 20),
+                    ],
+                    
+                    // Quick Actions
+                    _buildQuickActions(),
+                    
+                    SizedBox(height: 24),
+                    
+                    // About AyurSutra Section
+                    _buildAboutSection(),
+                    
+                    SizedBox(height: 20),
+                    
+                    // Panchakarma Information
+                    _buildPanchakarmaSection(),
+                    
+                    SizedBox(height: 20),
+                    
+                    // Benefits Section
+                    _buildBenefitsSection(),
+                    
+                    SizedBox(height: 30),
+                  ],
+                ),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(Icons.logout, color: Colors.white),
-            onPressed: _signOut,
-            tooltip: 'Logout',
+        ),
+      ),
+      bottomNavigationBar: _buildBottomNavigationBar(),
+    );
+  }
+
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      title: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.spa,
+              color: Colors.white,
+              size: 24,
+            ),
+          ),
+          SizedBox(width: 12),
+          Text(
+            'AyurSutra',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 24,
+              letterSpacing: 1.2,
+            ),
           ),
         ],
       ),
-      drawer: Drawer(
+      backgroundColor: primaryGreen,
+      elevation: 0,
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+          ),
+          onPressed: () {
+            // Navigate to notifications screen
+          },
+        ),
+        SizedBox(width: 8),
+        IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.logout, color: Colors.white, size: 20),
+          ),
+          onPressed: _signOut,
+        ),
+        SizedBox(width: 16),
+      ],
+    );
+  }
+
+  Widget _buildDrawer() {
+    return Drawer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [primaryGreen, accentGreen],
+          ),
+        ),
         child: ListView(
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
               decoration: BoxDecoration(
-                color: Color(0xFF2E7D32),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [primaryGreen, accentGreen.withOpacity(0.8)],
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundColor: Colors.white,
-                    child: Text(
-                      _patientData?.fullName.isNotEmpty ?? false 
-                          ? _patientData!.fullName.substring(0, 1) 
-                          : 'P',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2E7D32),
+                  Container(
+                    padding: EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: CircleAvatar(
+                      radius: 30,
+                      backgroundColor: surfaceGreen,
+                      child: Text(
+                        _patientData?.fullName.isNotEmpty ?? false 
+                            ? _patientData!.fullName.substring(0, 1) 
+                            : 'P',
+                        style: TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ),
                   ),
-                  SizedBox(height: 10),
+                  SizedBox(height: 12),
                   Text(
                     _patientData?.fullName ?? 'Patient',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   Text(
                     _patientData?.email ?? '',
                     style: TextStyle(
-                      color: Colors.white70,
+                      color: Colors.white.withOpacity(0.8),
                       fontSize: 14,
                     ),
                   ),
                 ],
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.home, color: _currentIndex == 0 ? Color(0xFF2E7D32) : null),
-              title: Text('Home'),
-              selected: _currentIndex == 0,
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                setState(() {
-                  _currentIndex = 0;
-                });
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.medical_services, color: _currentIndex == 1 ? Color(0xFF2E7D32) : null),
-              title: Text('Consulting'),
-              selected: _currentIndex == 1,
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                setState(() {
-                  _currentIndex = 1;
-                });
-                Navigator.pop(context);
-                // Navigate to consulting screen
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.calendar_today, color: _currentIndex == 2 ? Color(0xFF2E7D32) : null),
-              title: Text('Appointments'),
-              selected: _currentIndex == 2,
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                setState(() {
-                  _currentIndex = 2;
-                });
-                Navigator.pop(context);
-                // Navigate to appointments screen
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.medical_information_outlined, color: _currentIndex == 3 ? Color(0xFF2E7D32) : null),
-              title: Text('Panchakarma Info'),
-              selected: _currentIndex == 3,
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                setState(() {
-                  _currentIndex = 3;
-                });
-                Navigator.pop(context);
-                // Navigate to Panchakarma info screen
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.show_chart, color: _currentIndex == 4 ? Color(0xFF2E7D32) : null),
-              title: Text('My Progress'),
-              selected: _currentIndex == 4,
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                setState(() {
-                  _currentIndex = 4;
-                });
-                Navigator.pop(context);
-                // Navigate to progress visualization screen
-              },
-            ),
-            Divider(),
-            ListTile(
-              leading: Icon(Icons.person),
-              title: Text('Profile'),
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to profile screen
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Settings'),
-              selectedColor: Color(0xFF2E7D32),
-              onTap: () {
-                Navigator.pop(context);
-                // Navigate to settings screen
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.logout),
-              title: Text('Logout'),
-              selectedColor: Color(0xFF2E7D32),
-              onTap: _signOut,
-            ),
+            _buildDrawerItem(Icons.home, 'Home', 0),
+            _buildDrawerItem(Icons.medical_services, 'Consulting', 1),
+            _buildDrawerItem(Icons.calendar_today, 'Appointments', 2),
+            _buildDrawerItem(Icons.healing, 'Panchakarma', 3),
+            _buildDrawerItem(Icons.trending_up, 'My Progress', 4),
+            Divider(color: Colors.white.withOpacity(0.3)),
+            _buildDrawerItem(Icons.person, 'Profile', -1),
+            _buildDrawerItem(Icons.settings, 'Settings', -2),
+            _buildDrawerItem(Icons.logout, 'Logout', -3),
           ],
         ),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    );
+  }
+
+  Widget _buildDrawerItem(IconData icon, String title, int index) {
+    bool isSelected = index == _currentIndex;
+    
+    return Container(
+      margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: isSelected ? Colors.white.withOpacity(0.2) : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: ListTile(
+        leading: Icon(
+          icon, 
+          color: Colors.white.withOpacity(isSelected ? 1.0 : 0.8),
+          size: 24,
+        ),
+        title: Text(
+          title,
+          style: TextStyle(
+            color: Colors.white.withOpacity(isSelected ? 1.0 : 0.8),
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+          ),
+        ),
+        onTap: () {
+          if (index >= 0) {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
+          Navigator.pop(context);
+          
+          if (index == -1) {
+            // Profile
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ProfilePage(patientId: _patientData?.uid),
+              ),
+            );
+          } else if (index == -2) {
+            // Settings
+          } else if (index == -3) {
+            _signOut();
+          }
+        },
+      ),
+    );
+  }
+
+  String _getDateSuffix(int day) {
+    if (day >= 11 && day <= 13) return '${day}th';
+    switch (day % 10) {
+      case 1: return '${day}st';
+      case 2: return '${day}nd';
+      case 3: return '${day}rd';
+      default: return '${day}th';
+    }
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months[month - 1];
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: primaryGreen,
+          ),
+        ),
+        SizedBox(height: 16),
+        Row(
           children: [
-            // Welcome message
-            _buildWelcomeCard(),
-            
-            SizedBox(height: 20),
-            
-            // Next appointment reminder
-            if (_nextAppointment != null) _buildNextAppointmentCard(),
-            
-            SizedBox(height: 20),
-            
-            // Panchakarma Info Card
-            _buildInfoCard(
-              'What is Panchakarma?',
-              'Panchakarma is a Sanskrit term that means "five actions" or "five treatments". '
-              'It is a purification and rejuvenation program for the body, mind, and consciousness.',
-              Icons.spa,
+            Expanded(
+              child: _buildActionCard(
+                'Book Consultation',
+                Icons.medical_services,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ConsultingPage()),
+                  );
+                },
+              ),
             ),
-            
-            SizedBox(height: 16),
-            
-            // Steps in Panchakarma
-            _buildPanchakarmaStepsCard(),
-            
-            SizedBox(height: 16),
-            
-            // Benefits Card
-            _buildInfoCard(
-              'Benefits of Panchakarma',
-              'Panchakarma therapy eliminates toxins, restores metabolic processes, '
-              'enhances immunity and vitality, and creates harmony of Mind, Body, and Spirit.',
-              Icons.health_and_safety,
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                'My Appointments',
+                Icons.calendar_today,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                  );
+                },
+              ),
             ),
-            
-            SizedBox(height: 16),
-            
-            // Preparations Card
-            _buildInfoCard(
-              'Preparing for Panchakarma',
-              'Before beginning Panchakarma, a proper diet, adequate rest, and mental preparation are essential. '
-              'Your practitioner will guide you through specific pre-therapy protocols.',
-              Icons.checklist,
+          ],
+        ),
+        SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _buildActionCard(
+                'View Profile',
+                Icons.person,
+                () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ProfilePage(patientId: _patientData?.uid),
+                    ),
+                  );
+                },
+              ),
             ),
-            
-            SizedBox(height: 30),
+            SizedBox(width: 12),
+            Expanded(
+              child: _buildActionCard(
+                'Progress Report',
+                Icons.trending_up,
+                () {
+                  // Navigate to progress screen
+                },
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard(String title, IconData icon, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: primaryGreen.withOpacity(0.08),
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: surfaceGreen,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: primaryGreen,
+                size: 28,
+              ),
+            ),
+            SizedBox(height: 12),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: primaryGreen,
+              ),
+            ),
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
+    );
+  }
+
+  Widget _buildAboutSection() {
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.white, surfaceGreen.withOpacity(0.3)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: primaryGreen.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 3,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryGreen,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.spa,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'About AyurSutra',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: primaryGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Text(
+            'AyurSutra is dedicated to reintroducing the authentic tenets of Ayurveda to the modern world. We focus on producing organic remedies without compromising on the quality and quantity of traditional ingredients.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.6,
+            ),
+          ),
+          SizedBox(height: 16),
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: surfaceGreen.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.eco, color: primaryGreen, size: 24),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Experience authentic Ayurvedic healing with our organic, traditional remedies',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: primaryGreen,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPanchakarmaSection() {
+    return Container(
+      padding: EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: primaryGreen.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 3,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [primaryGreen, accentGreen],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  Icons.healing,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  'Panchakarma Therapy',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: primaryGreen,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 20),
+          Text(
+            'Panchakarma, meaning "five actions," is Ayurveda\'s most powerful purification and rejuvenation program for the body, mind, and consciousness.',
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey[700],
+              height: 1.6,
+            ),
+          ),
+          SizedBox(height: 20),
+          _buildPanchakarmaSteps(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPanchakarmaSteps() {
+    final steps = [
+      {
+        'name': 'Purvakarma',
+        'description': 'Preparatory treatments including oil massage and steam therapy',
+        'icon': Icons.spa,
+      },
+      {
+        'name': 'Panchakarma',
+        'description': 'Five main purification procedures tailored to your constitution',
+        'icon': Icons.spa,
+      },
+      {
+        'name': 'Paschatkarma',
+        'description': 'Post-treatment care with diet and lifestyle recommendations',
+        'icon': Icons.restaurant_menu,
+      },
+    ];
+
+    return Column(
+      children: steps.asMap().entries.map((entry) {
+        final index = entry.key;
+        final step = entry.value;
+        
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: surfaceGreen.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: primaryGreen,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  step['icon'] as IconData,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      step['name'] as String,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: primaryGreen,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      step['description'] as String,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey[600],
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildBenefitsSection() {
+    final benefits = [
+      {
+        'title': 'Detoxification',
+        'description': 'Eliminates toxins and impurities from the body',
+        'icon': Icons.water_drop,
+      },
+      {
+        'title': 'Enhanced Immunity',
+        'description': 'Strengthens natural defense mechanisms',
+        'icon': Icons.shield,
+      },
+      {
+        'title': 'Mental Clarity',
+        'description': 'Improves focus and cognitive function',
+        'icon': Icons.psychology,
+      },
+      {
+        'title': 'Stress Relief',
+        'description': 'Promotes deep relaxation and inner peace',
+        'icon': Icons.self_improvement,
+      },
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Benefits of Panchakarma',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: primaryGreen,
+          ),
+        ),
+        SizedBox(height: 16),
+        GridView.count(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.2,
+          children: benefits.map((benefit) => Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: primaryGreen.withOpacity(0.08),
+                  blurRadius: 10,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: surfaceGreen,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    benefit['icon'] as IconData,
+                    color: primaryGreen,
+                    size: 28,
+                  ),
+                ),
+                SizedBox(height: 12),
+                Text(
+                  benefit['title'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: primaryGreen,
+                  ),
+                ),
+                SizedBox(height: 6),
+                Text(
+                  benefit['description'] as String,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    height: 1.3,
+                  ),
+                ),
+              ],
+            ),
+          )).toList(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBottomNavigationBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: primaryGreen.withOpacity(0.1),
+            blurRadius: 15,
+            spreadRadius: 0,
+            offset: Offset(0, -5),
+          ),
+        ],
+      ),
+      child: BottomNavigationBar(
         currentIndex: _currentIndex > 3 ? 0 : _currentIndex,
         onTap: (index) {
-          if (index == _currentIndex) return; // Don't navigate if already on the selected tab
+          if (index == _currentIndex) return;
           
           switch (index) {
-            case 0: // Home - already on this page
+            case 0: // Home
               setState(() {
                 _currentIndex = 0;
               });
@@ -669,162 +1238,187 @@ class _PatientDashboardState extends State<PatientDashboard> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: Color(0xFF2E7D32),
+        backgroundColor: Colors.white,
+        selectedItemColor: primaryGreen,
         unselectedItemColor: Colors.grey.shade600,
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
         items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 0 ? surfaceGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.home),
+            ),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.medical_services),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 1 ? surfaceGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.medical_services),
+            ),
             label: 'Consulting',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 2 ? surfaceGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.calendar_today),
+            ),
             label: 'Appointments',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: _currentIndex == 3 ? surfaceGreen : Colors.transparent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(Icons.person),
+            ),
             label: 'Profile',
           ),
         ],
       ),
     );
   }
-
-  Widget _buildWelcomeCard() {
-    final String patientName = _patientData != null ? _patientData!.fullName : 'Patient';
+  
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning';
+    } else if (hour < 17) {
+      return 'Good Afternoon';
+    } else {
+      return 'Good Evening';
+    }
+  }
+  
+  Widget _buildNextAppointmentCard() {
+    if (_nextAppointment == null) {
+      return SizedBox.shrink();
+    }
     
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF2E7D32), Color(0xFF388E3C)],
-          ),
-          borderRadius: BorderRadius.circular(12),
+    final appointmentDate = (_nextAppointment!['appointmentDate'] as Timestamp).toDate();
+    final formattedDate = '${_getMonthName(appointmentDate.month)} ${_getDateSuffix(appointmentDate.day)}, ${appointmentDate.year}';
+    
+    final time = _nextAppointment!['time'] ?? 'Time not specified';
+    final therapy = _nextAppointment!['therapyType'] ?? 'Consultation';
+    final practitionerName = _nextAppointment!['practitionerName'] ?? 'Your practitioner';
+    
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [primaryGreen, accentGreen],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: primaryGreen.withOpacity(0.3),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: Colors.white,
-                  radius: 30,
-                  child: Text(
-                    patientName.isNotEmpty ? patientName[0].toUpperCase() : 'P',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2E7D32),
-                    ),
+                Container(
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.calendar_today,
+                    color: Colors.white,
+                    size: 24,
                   ),
                 ),
-                SizedBox(width: 16),
+                SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome,',
+                        'Upcoming Appointment',
                         style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.white70,
-                        ),
-                      ),
-                      Text(
-                        patientName,
-                        style: TextStyle(
-                          fontSize: 22,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      if (_patientData != null && _patientData!.doshaType != null)
-                        Text(
-                          'Dosha Type: ${_patientData!.doshaType}',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.9),
-                          ),
+                      SizedBox(height: 4),
+                      Text(
+                        therapy,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
                         ),
+                      ),
                     ],
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            Text(
-              'Begin your journey to holistic wellness with Ayur Sutra personalized Panchakarma therapy.',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.white.withOpacity(0.9),
+          ),
+          Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(16),
+                bottomRight: Radius.circular(16),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNextAppointmentCard() {
-    if (_nextAppointment == null) return SizedBox();
-    
-    final appointmentDate = _nextAppointment!['appointmentDate'] as Timestamp?;
-    final date = appointmentDate?.toDate() ?? DateTime.now();
-    final formattedDate = '${date.day}/${date.month}/${date.year}';
-    final time = _nextAppointment!['appointmentTime'] ?? '10:00 AM';
-    final therapy = _nextAppointment!['therapyType'] ?? 'Panchakarma Session';
-
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.calendar_today, color: Color(0xFF2E7D32)),
-                SizedBox(width: 8),
-                Text(
-                  'Your Next Appointment',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 16),
-            Row(
+            child: Row(
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        therapy,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      Row(
+                        children: [
+                          Icon(Icons.access_time, size: 18, color: accentGreen),
+                          SizedBox(width: 8),
+                          Text(
+                            time.toString(),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: primaryGreen,
+                            ),
+                          ),
+                        ],
                       ),
-                      SizedBox(height: 4),
-                      Text(
-                        '$formattedDate • $time',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[700],
-                        ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.event, size: 18, color: accentGreen),
+                          SizedBox(width: 8),
+                          Text(
+                            formattedDate,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -834,164 +1428,169 @@ class _PatientDashboardState extends State<PatientDashboard> {
                     // Navigate to appointment details
                   },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Color(0xFF2E7D32),
+                    backgroundColor: primaryGreen,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
+                    elevation: 5,
                   ),
-                  child: Text('View Details'),
+                  child: Text(
+                    'View Details',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildInfoCard(String title, String content, IconData icon) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Color(0xFF2E7D32), size: 24),
-                SizedBox(width: 8),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            Text(
-              content,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[800],
-                height: 1.5,
-              ),
-            ),
-          ],
+  Widget _buildHeroSection() {
+    final String patientName = _patientData != null ? _patientData!.fullName : 'Patient';
+    final String greeting = _getGreeting();
+    
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [primaryGreen, accentGreen],
         ),
       ),
-    );
-  }
-
-  Widget _buildPanchakarmaStepsCard() {
-    final steps = [
-      {
-        'name': 'Purvakarma (Preparatory Procedures)',
-        'description': 'Prepares the body for the main treatments through oil massage and steam therapy.'
-      },
-      {
-        'name': 'Vamana (Therapeutic Emesis)',
-        'description': 'Eliminates excess Kapha dosha from the body.'
-      },
-      {
-        'name': 'Virechana (Therapeutic Purgation)',
-        'description': 'Removes excess Pitta dosha from the small intestine and liver.'
-      },
-      {
-        'name': 'Basti (Therapeutic Enema)',
-        'description': 'Addresses Vata dosha imbalances through medicated enemas.'
-      },
-      {
-        'name': 'Nasya (Nasal Administration)',
-        'description': 'Eliminates toxins from the head and neck region.'
-      },
-      {
-        'name': 'Raktamokshana (Bloodletting)',
-        'description': 'Purifies the blood (not commonly practiced in modern settings).'
-      },
-      {
-        'name': 'Paschatkarma (Post-Procedure Care)',
-        'description': 'Includes dietary and lifestyle recommendations to maintain the benefits.'
-      },
-    ];
-
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      child: Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(24, 20, 24, 40),
+            child: Column(
               children: [
-                Icon(Icons.format_list_numbered, color: Color(0xFF2E7D32), size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'Steps in Panchakarma',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2E7D32),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 12),
-            ...steps.asMap().entries.map((entry) {
-              final index = entry.key;
-              final step = entry.value;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Color(0xFF2E7D32),
-                      child: Text(
-                        '${index + 1}',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                    Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: CircleAvatar(
+                        backgroundColor: surfaceGreen,
+                        radius: 35,
+                        child: Text(
+                          patientName.isNotEmpty ? patientName[0].toUpperCase() : 'P',
+                          style: TextStyle(
+                            fontSize: 30,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(width: 12),
+                    SizedBox(width: 20),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            step['name']!,
+                            greeting,
                             style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
+                              fontSize: 16,
+                              color: Colors.white.withOpacity(0.9),
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SizedBox(height: 4),
                           Text(
-                            step['description']!,
+                            patientName,
                             style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 13,
+                              fontSize: 26,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
                             ),
                           ),
+                          if (_patientData != null && _patientData!.doshaType != null)
+                            Container(
+                              margin: EdgeInsets.only(top: 8),
+                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Dosha: ${_patientData!.doshaType}',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
                   ],
                 ),
-              );
-            }).toList(),
-          ],
-        ),
+                SizedBox(height: 24),
+                Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.3)),
+                  ),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.spa,
+                        color: Colors.white,
+                        size: 32,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'Your Journey to Authentic Ayurvedic Wellness',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          height: 1.4,
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Experience the power of organic remedies and traditional wisdom',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.9),
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            height: 20,
+            decoration: BoxDecoration(
+              color: backgroundGreen,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
