@@ -22,7 +22,7 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
   
-  // Configure Firebase Auth to disable reCAPTCHA for testing
+  // Initialize Firebase service
   await FirebaseService.initializeAuth();
   
   runApp(const PanchakarmaApp());
