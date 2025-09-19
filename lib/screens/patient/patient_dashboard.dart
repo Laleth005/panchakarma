@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import '../../models/patient_model.dart';
 import '../auth/login_screen_new.dart';
-import 'consulting_page.dart';
+import 'consulting_page_new.dart';
 import 'appointments_page.dart';
 import 'profile_page.dart';
 
@@ -21,6 +21,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
   PatientModel? _patientData;
   Map<String, dynamic>? _nextAppointment;
   bool _isLoading = true;
+  bool _isRefreshing = false;
   int _currentIndex = 0;
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
@@ -98,199 +99,141 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     );
   }
 
+  /// ✅ Corrected version: Fetches patient data by UID directly from `patients` collection
   Future<void> _loadPatientData() async {
     try {
       print("========== LOADING PATIENT DATA ==========");
       String? userId;
       
-      // Step 0: Check if patientId was passed from login screen
+      // Check if patientId was passed from login screen
       if (widget.patientId != null && widget.patientId!.isNotEmpty) {
-        print("Patient ID provided from login: ${widget.patientId}");
         userId = widget.patientId;
+      } else {
+        // Use Firebase Auth to get current user
+        final firebaseUser = _authService.currentUser;
         
-        // Try to load directly with this ID
-        try {
-          final patientDoc = await FirebaseFirestore.instance
-              .collection('patients')
-              .doc(userId)
-              .get();
-              
-          if (patientDoc.exists) {
-            print("Successfully loaded patient with provided ID");
-            final data = patientDoc.data()!;
-            data['uid'] = userId;
-            
-            // Create patient model with safe handling of timestamps
-            final patient = _createPatientFromFirestore(data);
-            
-            setState(() {
-              _patientData = patient;
-              _isLoading = false;
-            });
-            
-            _fadeController.forward();
-            
-            // Safe null check before calling fetchNextAppointment
-            if (userId != null) {
-              await _fetchNextAppointment(userId);
-            }
-            return;
-          }
-        } catch (e) {
-          print("Error loading patient with provided ID: $e");
+        if (firebaseUser == null) {
+          print("No user is currently signed in.");
+          _signOut();
+          return;
         }
-      }
-      
-      // Step 1: Try to load patient data using AuthService
-      print("Step 1: Trying to get patient data from AuthService");
-      final userData = await _authService.getCurrentUserData();
-      print("AuthService returned user data: $userData");
-      
-      if (userData is PatientModel) {
-        print("Success: User is a PatientModel with uid: ${userData.uid}");
-        setState(() {
-          _patientData = userData;
-          _isLoading = false;
-        });
         
-        _fadeController.forward();
-        
-        // Now try to fetch next appointment
-        await _fetchNextAppointment(userData.uid);
-        return;
-      }
-      
-      // Step 2: If AuthService failed, check Firebase Auth directly
-      print("Step 2: Checking Firebase Auth current user");
-      final firebaseUser = _authService.currentUser;
-      
-      if (firebaseUser != null) {
-        print("Firebase Auth has current user: ${firebaseUser.uid}");
         userId = firebaseUser.uid;
-        
-        // Step 3: Try to get patient data directly from Firestore
-        print("Step 3: Getting patient data directly from Firestore");
-        try {
-          final patientDoc = await FirebaseFirestore.instance
-              .collection('patients')
-              .doc(firebaseUser.uid)
-              .get();
+      }
+      
+      // Fetch patient data directly from Firestore
+      final patientDoc = await FirebaseFirestore.instance
+          .collection('patients')
+          .doc(userId)
+          .get();
           
-          if (patientDoc.exists) {
-            print("Success: Found patient doc in Firestore");
-            final data = patientDoc.data()!;
-            
-            // Ensure uid is in the data
-            data['uid'] = firebaseUser.uid;
-            
-            // Ensure role is in the data
-            if (!data.containsKey('role')) {
-              data['role'] = 'patient';
-            }
-            
-            // Create patient model using our helper
-            final patient = _createPatientFromFirestore(data);
-            
-            setState(() {
-              _patientData = patient;
-              _isLoading = false;
-            });
-            
-            _fadeController.forward();
-            
-            await _fetchNextAppointment(firebaseUser.uid);
-            return;
-          } else {
-            print("No patient doc found in Firestore for uid: ${firebaseUser.uid}");
-            print("Creating new patient document");
-            
-            // Create a new patient document if it doesn't exist
-            await FirebaseFirestore.instance.collection('patients').doc(firebaseUser.uid).set({
-              'uid': firebaseUser.uid,
-              'email': firebaseUser.email ?? '',
-              'fullName': firebaseUser.displayName ?? 'Patient',
-              'role': 'patient',
-              'createdAt': FieldValue.serverTimestamp(),
-              'updatedAt': FieldValue.serverTimestamp(),
-            });
-            
-            // Create a basic patient model without waiting for Firestore
-            final patient = PatientModel(
-              uid: firebaseUser.uid,
-              email: firebaseUser.email ?? '',
-              fullName: firebaseUser.displayName ?? 'Patient',
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-            
-            setState(() {
-              _patientData = patient;
-              _isLoading = false;
-            });
-            
-            _fadeController.forward();
-            
-            return;
-          }
-        } catch (firestoreError) {
-          print("Error fetching patient doc from Firestore: $firestoreError");
-        }
-      }
-      
-      // Step 4: Try creating a test patient for demo purposes
-      print("Step 4: Creating a demo patient for testing");
-      
-      try {
-        final demoUid = 'demo-${DateTime.now().millisecondsSinceEpoch}';
-        print("Creating demo patient with ID: $demoUid");
-        
-        // Create a demo document in Firestore
-        try {
-          await FirebaseFirestore.instance.collection('patients').doc(demoUid).set({
-            'uid': demoUid,
-            'email': 'demo@ayursutra.com',
-            'fullName': 'Demo Patient',
-            'role': 'patient',
-            'createdAt': FieldValue.serverTimestamp(),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-          print("Created demo patient document in Firestore");
-        } catch (e) {
-          print("Failed to create demo patient in Firestore: $e");
-        }
-        
-        // Create a basic patient model for the UI
-        final demoPatient = PatientModel(
-          uid: demoUid,
-          email: 'demo@ayursutra.com',
-          fullName: 'Demo Patient',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        
-        setState(() {
-          _patientData = demoPatient;
-          _isLoading = false;
-        });
-        
-        _fadeController.forward();
-        
+      if (!patientDoc.exists) {
+        print("No patient document found for UID: $userId");
+        _signOut();
         return;
-      } catch (e) {
-        print("Error creating demo patient: $e");
       }
       
-      // If we got here, we couldn't get or create patient data
-      print("Failed to load or create patient data");
+      // Create data map with UID included
+      final data = patientDoc.data()!;
+      data['uid'] = userId;
+      
+      // Create patient model with safe handling of timestamps
+      final patient = _createPatientFromFirestore(data);
+      
       setState(() {
+        _patientData = patient;
         _isLoading = false;
+        _isRefreshing = false;
       });
+      
+      _fadeController.forward();
+      
+      // Fetch next appointment if userId is not null
+      if (userId != null) {
+        await _fetchNextAppointment(userId);
+      }
       
     } catch (e) {
-      print('Error in _loadPatientData: $e');
+      print('Error loading patient data: $e');
       setState(() {
         _isLoading = false;
+        _isRefreshing = false;
       });
+    }
+  }
+  
+  /// Refresh dashboard data from Firebase
+  Future<void> _refreshDashboard() async {
+    // Don't do anything if already refreshing
+    if (_isRefreshing) return;
+    
+    setState(() {
+      _isRefreshing = true;
+    });
+    
+    // Show a temporary "refreshing" message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+            ),
+            SizedBox(width: 12),
+            Text('Refreshing data...'),
+          ],
+        ),
+        duration: Duration(seconds: 1),
+      ),
+    );
+    
+    try {
+      await _loadPatientData();
+      
+      // Only show success message if still mounted
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Dashboard refreshed successfully'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+            backgroundColor: primaryGreen,
+          ),
+        );
+      }
+    } catch (error) {
+      print('Error during refresh: $error');
+      
+      // Only show error message if still mounted
+      if (mounted) {
+        setState(() {
+          _isRefreshing = false;
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 12),
+                Text('Failed to refresh dashboard'),
+              ],
+            ),
+            duration: Duration(seconds: 3),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
   
@@ -560,6 +503,28 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       backgroundColor: primaryGreen,
       elevation: 0,
       actions: [
+        IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              shape: BoxShape.circle,
+            ),
+            child: _isRefreshing 
+              ? SizedBox(
+                  width: 18, 
+                  height: 18, 
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  )
+                )
+              : Icon(Icons.refresh, color: Colors.white, size: 20),
+          ),
+          onPressed: _isRefreshing ? null : _refreshDashboard,
+          tooltip: 'Refresh',
+        ),
+        SizedBox(width: 8),
         IconButton(
           icon: Container(
             padding: EdgeInsets.all(8),
@@ -1024,7 +989,6 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
 
     return Column(
       children: steps.asMap().entries.map((entry) {
-        final index = entry.key;
         final step = entry.value;
         
         return Container(
@@ -1313,7 +1277,6 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     
     final time = _nextAppointment!['time'] ?? 'Time not specified';
     final therapy = _nextAppointment!['therapyType'] ?? 'Consultation';
-    final practitionerName = _nextAppointment!['practitionerName'] ?? 'Your practitioner';
     
     return Container(
       decoration: BoxDecoration(
