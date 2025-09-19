@@ -376,8 +376,8 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
             _buildDivider(),
             _buildDetailItem(
               'Specialties', 
-              _practitionerData!.specialties.isNotEmpty
-                ? _practitionerData!.specialties.join(', ') 
+              _practitionerData!.specialties != null && _practitionerData!.specialties!.isNotEmpty
+                ? _practitionerData!.specialties!.join(', ') 
                 : 'None specified'
             ),
             _buildDivider(),

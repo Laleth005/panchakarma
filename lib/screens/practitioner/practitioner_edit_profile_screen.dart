@@ -37,7 +37,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
     _qualificationController = TextEditingController(text: widget.practitioner.qualification ?? '');
     _experienceController = TextEditingController(text: widget.practitioner.experience ?? '');
     _bioController = TextEditingController(text: widget.practitioner.bio ?? '');
-    _specialties = List<String>.from(widget.practitioner.specialties);
+    _specialties = widget.practitioner.specialties != null ? List<String>.from(widget.practitioner.specialties!) : [];
   }
 
   @override

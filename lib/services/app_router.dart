@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../screens/practitioner/practitioner_dashboard_new.dart';
+import '../screens/practitioner/practitioner_dashboard.dart';
 
 class AppRouter {
   // Navigation methods for Aayur Sutra application
@@ -7,7 +7,7 @@ class AppRouter {
   // Navigate to Practitioner Dashboard
   static void navigateToPractitionerDashboard(BuildContext context) {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const PractitionerDashboardNew()),
+      MaterialPageRoute(builder: (context) => const PractitionerDashboard()),
     );
   }
   

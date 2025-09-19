@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Green Theme Colors
 class AppColors {
@@ -11,21 +12,16 @@ class AppColors {
   static const Color cardGreen = Color(0xFFE8F5E8);
 }
 
-// 1. RENAMED THE CLASS TO ConsultingPage
-class ConsultingPage extends StatefulWidget {
-  // 2. ADDED the patientId variable to accept the patient's ID
-  final String? patientId;
-
-  // 3. MODIFIED the constructor to include patientId
-  const ConsultingPage({super.key, this.patientId});
+class PatientConsultationFormPage extends StatefulWidget {
+  const PatientConsultationFormPage({Key? key}) : super(key: key);
 
   @override
-  _ConsultingPageState createState() =>
-      _ConsultingPageState();
+  _PatientConsultationFormPageState createState() =>
+      _PatientConsultationFormPageState();
 }
 
-class _ConsultingPageState
-    extends State<ConsultingPage> {
+class _PatientConsultationFormPageState
+    extends State<PatientConsultationFormPage> {
   final _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -42,12 +38,16 @@ class _ConsultingPageState
       TextEditingController();
 
   // Form state variables
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
+  DateTime _selectedDate = DateTime.now().add(Duration(days: 1));
+  TimeOfDay _selectedTime = TimeOfDay(hour: 10, minute: 0);
   String _selectedGender = 'Male';
   String _selectedCondition = '';
   String _panchakarmaExperience = 'New to Panchakarma';
   bool _isSubmitting = false;
+
+  // User authentication state
+  User? _currentUser;
+  bool _isCheckingAuth = true;
 
   // Health conditions list
   final List<String> _healthConditions = [
@@ -86,6 +86,71 @@ class _ConsultingPageState
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _initializeAuthentication();
+  }
+
+  // Initialize authentication and user details
+  Future<void> _initializeAuthentication() async {
+    try {
+      // Get current user
+      _currentUser = FirebaseAuth.instance.currentUser;
+      
+      if (_currentUser != null) {
+        print('✅ User authenticated: ${_currentUser!.uid}');
+        print('User email: ${_currentUser!.email}');
+        print('User display name: ${_currentUser!.displayName}');
+        
+        // Pre-populate form with user data if available
+        _prefillUserData();
+        
+        // Listen to auth state changes
+        FirebaseAuth.instance.authStateChanges().listen((User? user) {
+          if (mounted) {
+            setState(() {
+              _currentUser = user;
+            });
+            
+            if (user == null) {
+              print('❌ User signed out during form session');
+              _showErrorSnackBar('Session expired. Please login again.');
+              Navigator.of(context).pop();
+            }
+          }
+        });
+      } else {
+        print('❌ No authenticated user found');
+        _showErrorSnackBar('Please login first to access this form');
+        Navigator.of(context).pop();
+        return;
+      }
+      
+    } catch (e) {
+      print('❌ Authentication initialization error: $e');
+      _showErrorSnackBar('Authentication error. Please try again.');
+      Navigator.of(context).pop();
+      return;
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCheckingAuth = false;
+        });
+      }
+    }
+  }
+
+  // Pre-fill form with user data
+  void _prefillUserData() {
+    if (_currentUser != null) {
+      // Pre-fill name if available
+      if (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty) {
+        _nameController.text = _currentUser!.displayName!;
+      }
+    }
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _ageController.dispose();
@@ -105,7 +170,7 @@ class _ConsultingPageState
           _currentPage++;
         });
         _pageController.nextPage(
-          duration: const Duration(milliseconds: 300),
+          duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
       }
@@ -118,7 +183,7 @@ class _ConsultingPageState
         _currentPage--;
       });
       _pageController.previousPage(
-        duration: const Duration(milliseconds: 300),
+        duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     }
@@ -167,8 +232,7 @@ class _ConsultingPageState
       _showErrorSnackBar('Please select a health condition');
       return false;
     }
-    if (_selectedCondition == 'Others' &&
-        _customConditionController.text.trim().isEmpty) {
+    if (_selectedCondition == 'Others' && _customConditionController.text.trim().isEmpty) {
       _showErrorSnackBar('Please specify your condition');
       return false;
     }
@@ -176,25 +240,27 @@ class _ConsultingPageState
   }
 
   void _showErrorSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   void _showSuccessSnackBar(String message) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: AppColors.lightGreen,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: AppColors.lightGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   // Date and Time picker methods
@@ -203,11 +269,11 @@ class _ConsultingPageState
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      lastDate: DateTime.now().add(Duration(days: 365)),
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primaryGreen,
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -232,7 +298,7 @@ class _ConsultingPageState
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
+            colorScheme: ColorScheme.light(
               primary: AppColors.primaryGreen,
               onPrimary: Colors.white,
               surface: Colors.white,
@@ -250,52 +316,189 @@ class _ConsultingPageState
     }
   }
 
-  // Firebase submission method
+  // Enhanced Firebase submission method
   Future<void> _submitForm() async {
+    // First validate all data
+    if (!_validateAllData()) {
+      return;
+    }
+
+    // Check if user is still authenticated
+    if (_currentUser == null) {
+      _showErrorSnackBar('Session expired. Please login again.');
+      Navigator.of(context).pop();
+      return;
+    }
+
     setState(() {
       _isSubmitting = true;
     });
 
     try {
-      // 4. USE THE PASSED-IN patientId INSTEAD OF GETTING IT FROM FIREBASE AUTH
-      final patientId = widget.patientId;
-      if (patientId == null) {
-        throw Exception('Patient ID is not available. Please log in again.');
+      print('🚀 Starting form submission for user: ${_currentUser!.uid}');
+      
+      // Refresh the user token to ensure it's valid
+      await _currentUser!.reload();
+      String? idToken = await _currentUser!.getIdToken(true);
+      
+      if (idToken == null) {
+        throw FirebaseAuthException(
+          code: 'token-not-available',
+          message: 'Unable to get authentication token',
+        );
       }
-
-      final consultationData = {
-        'patientId': patientId, // Use the passed-in patientId
-        'name': _nameController.text.trim(),
-        'age': int.parse(_ageController.text.trim()),
+      
+      print('✅ Authentication token refreshed successfully');
+      
+      // Prepare appointment data with comprehensive user info
+      final appointmentData = <String, dynamic>{
+        // User authentication details
+        'userId': _currentUser!.uid,
+        'userEmail': _currentUser!.email ?? 'No email provided',
+        'userDisplayName': _currentUser!.displayName ?? _nameController.text.trim(),
+        'phoneVerified': _currentUser!.phoneNumber != null,
+        'emailVerified': _currentUser!.emailVerified,
+        
+        // Patient information
+        'patientName': _nameController.text.trim(),
+        'age': int.tryParse(_ageController.text.trim()) ?? 0,
         'gender': _selectedGender,
-        'phone': _phoneController.text.trim(),
-        'healthCondition': _selectedCondition == 'Others'
-            ? _customConditionController.text.trim()
+        'phoneNumber': _phoneController.text.trim(),
+        
+        // Health information
+        'healthCondition': _selectedCondition == 'Others' 
+            ? _customConditionController.text.trim() 
             : _selectedCondition,
         'conditionDescription': _conditionDescriptionController.text.trim(),
         'panchakarmaExperience': _panchakarmaExperience,
-        'preferredDate': Timestamp.fromDate(_selectedDate),
-        'preferredTime':
-            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+        
+        // Appointment details
+        'appointmentDate': Timestamp.fromDate(_selectedDate),
+        'appointmentTime': '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+        'appointmentDateTime': Timestamp.fromDate(DateTime(
+          _selectedDate.year,
+          _selectedDate.month,
+          _selectedDate.day,
+          _selectedTime.hour,
+          _selectedTime.minute,
+        )),
+        
+        // Additional information
         'additionalNotes': _additionalNotesController.text.trim(),
+        
+        // Status and metadata
         'status': 'pending',
+        'appointmentType': 'consultation',
+        'paymentStatus': 'pending',
+        'isActive': true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
+        'submittedAt': DateTime.now().toIso8601String(),
+        
+        // Device and session info
+        'submissionSource': 'mobile_app',
+        'deviceInfo': 'flutter_app',
       };
 
-      await FirebaseFirestore.instance
-          .collection('consultations')
-          .add(consultationData);
+      print('📝 Appointment data prepared with ${appointmentData.keys.length} fields');
 
-      _showSuccessSnackBar('Consultation request submitted successfully!');
+      // Check Firestore connectivity
+      await FirebaseFirestore.instance.disableNetwork();
+      await FirebaseFirestore.instance.enableNetwork();
+      print('✅ Firestore network connectivity verified');
 
-      if (mounted) {
-        // Navigate back or to confirmation page
-        Navigator.of(context).pop();
+      // Submit to Firestore with retry logic
+      DocumentReference docRef;
+      int retryCount = 0;
+      const maxRetries = 3;
+      
+      while (retryCount < maxRetries) {
+        try {
+          docRef = await FirebaseFirestore.instance
+              .collection('appointments')
+              .add(appointmentData);
+          
+          print('✅ Appointment saved successfully with ID: ${docRef.id}');
+          break;
+          
+        } catch (e) {
+          retryCount++;
+          print('⚠️ Attempt $retryCount failed: $e');
+          
+          if (retryCount >= maxRetries) {
+            throw e;
+          }
+          
+          // Wait before retry
+          await Future.delayed(Duration(seconds: retryCount));
+        }
       }
+      
+      // Verify the document was created
+      
+      
+      // Wait for user to see the success message
+      await Future.delayed(Duration(seconds: 2));
+      
+      // Navigate back to dashboard
+      if (mounted) {
+        Navigator.of(context).pop(true); // Return true to indicate success
+      }
+
+    } on FirebaseAuthException catch (e) {
+      print('🔥 Firebase Auth Error: ${e.code} - ${e.message}');
+      String errorMessage = 'Authentication error: ';
+      
+      switch (e.code) {
+        case 'user-token-expired':
+        case 'token-not-available':
+        case 'invalid-user-token':
+          errorMessage += 'Session expired. Please login again.';
+          // Navigate back to login
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          break;
+        case 'user-disabled':
+          errorMessage += 'Your account has been disabled.';
+          break;
+        case 'user-not-found':
+          errorMessage += 'User account not found. Please login again.';
+          break;
+        default:
+          errorMessage += 'Please login again and retry.';
+      }
+      
+      _showErrorSnackBar(errorMessage);
+      
+    } on FirebaseException catch (e) {
+      print('🔥 Firebase Firestore Error: ${e.code} - ${e.message}');
+      String errorMessage = 'Failed to submit appointment. ';
+      
+      switch (e.code) {
+        case 'permission-denied':
+          errorMessage += 'Access denied. Please check your login status.';
+          break;
+        case 'unavailable':
+          errorMessage += 'Service unavailable. Please check your internet connection.';
+          break;
+        case 'unauthenticated':
+          errorMessage += 'Authentication required. Please login again.';
+          break;
+        case 'deadline-exceeded':
+        case 'cancelled':
+          errorMessage += 'Request timed out. Please try again.';
+          break;
+        case 'resource-exhausted':
+          errorMessage += 'Service temporarily overloaded. Please try again later.';
+          break;
+        default:
+          errorMessage += 'Error code: ${e.code}. Please try again.';
+      }
+      
+      _showErrorSnackBar(errorMessage);
+      
     } catch (e) {
-      print('Error submitting form: $e');
-      _showErrorSnackBar('Failed to submit form. Please try again.');
+      print('❌ General Error during submission: $e');
+      _showErrorSnackBar('Unexpected error occurred. Please try again.');
     } finally {
       if (mounted) {
         setState(() {
@@ -305,30 +508,162 @@ class _ConsultingPageState
     }
   }
 
+  // Save appointment ID to user's profile for tracking
+  Future<void> _saveAppointmentToUserProfile(String appointmentId) async {
+    try {
+      if (_currentUser != null) {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('appointments')
+            .doc(appointmentId)
+            .set({
+          'appointmentId': appointmentId,
+          'status': 'pending',
+          'type': 'consultation',
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+        print('✅ Appointment reference saved to user profile');
+      }
+    } catch (e) {
+      print('⚠️ Failed to save appointment reference to user profile: $e');
+      // This is not critical, so we don't show error to user
+    }
+  }
+
+  // Method to validate all data before submission
+  bool _validateAllData() {
+    // Validate personal info
+    if (!_validatePersonalInfo()) {
+      setState(() {
+        _currentPage = 0;
+      });
+      _pageController.animateToPage(
+        0,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return false;
+    }
+
+    // Validate health info
+    if (!_validateHealthInfo()) {
+      setState(() {
+        _currentPage = 1;
+      });
+      _pageController.animateToPage(
+        1,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeInOut,
+      );
+      return false;
+    }
+
+    return true;
+  }
+
   // --------------------------
   // WIDGET BUILDERS
   // --------------------------
 
   @override
   Widget build(BuildContext context) {
+    // Show loading screen while checking authentication
+    if (_isCheckingAuth) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundGreen,
+        appBar: AppBar(
+          title: Text('Consultation Request'),
+          backgroundColor: AppColors.primaryGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppColors.primaryGreen),
+              SizedBox(height: 16),
+              Text(
+                'Verifying authentication...',
+                style: TextStyle(color: AppColors.darkGreen),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Show error if user is not authenticated
+    if (_currentUser == null) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundGreen,
+        appBar: AppBar(
+          title: Text('Authentication Required'),
+          backgroundColor: AppColors.primaryGreen,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock, size: 64, color: AppColors.primaryGreen),
+              SizedBox(height: 16),
+              Text(
+                'Please login to access this form',
+                style: TextStyle(
+                  fontSize: 18,
+                  color: AppColors.darkGreen,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primaryGreen,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                ),
+                child: Text('Go Back'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Main form UI
     return Scaffold(
       backgroundColor: AppColors.backgroundGreen,
       appBar: AppBar(
-        title: const Text('Consultation Request'),
+        title: Text('Consultation Request'),
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
+        actions: [
+          // Show user indicator
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Center(
+              child: Text(
+                'Hi, ${_currentUser!.displayName?.split(' ').first ?? 'User'}',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Column(
         children: [
           // Progress indicator
           _buildProgressIndicator(),
-
+          
           // Page content
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Prevents manual swiping
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
@@ -341,7 +676,7 @@ class _ConsultingPageState
               ],
             ),
           ),
-
+          
           // Navigation buttons
           _buildNavigationButtons(),
         ],
@@ -351,19 +686,18 @@ class _ConsultingPageState
 
   Widget _buildProgressIndicator() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       color: Colors.white,
       child: Row(
         children: [
           for (int i = 0; i < 3; i++)
             Expanded(
               child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
+                margin: EdgeInsets.symmetric(horizontal: 4),
                 child: LinearProgressIndicator(
                   value: i <= _currentPage ? 1.0 : 0.0,
                   backgroundColor: Colors.grey.shade300,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
                   minHeight: 4,
                 ),
               ),
@@ -375,13 +709,13 @@ class _ConsultingPageState
 
   Widget _buildPersonalInfoPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Form(
         key: _formKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Personal Information',
               style: TextStyle(
                 fontSize: 24,
@@ -389,12 +723,42 @@ class _ConsultingPageState
                 color: AppColors.darkGreen,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8),
             Text(
               'Please provide your basic information',
               style: TextStyle(color: Colors.grey[600]),
             ),
-            const SizedBox(height: 24),
+            
+            // Show user account info
+            if (_currentUser != null) ...[
+              SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.cardGreen.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.accentGreen.withOpacity(0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.verified_user, color: AppColors.primaryGreen, size: 20),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Logged in as: ${_currentUser!.email}',
+                        style: TextStyle(
+                          color: AppColors.darkGreen,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+            
+            SizedBox(height: 24),
+
             _buildTextField(
               controller: _nameController,
               label: 'Full Name',
@@ -406,7 +770,8 @@ class _ConsultingPageState
                 return null;
               },
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
+
             Row(
               children: [
                 Expanded(
@@ -427,13 +792,14 @@ class _ConsultingPageState
                     },
                   ),
                 ),
-                const SizedBox(width: 16),
+                SizedBox(width: 16),
                 Expanded(
                   child: _buildGenderSelector(),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16),
+
             _buildTextField(
               controller: _phoneController,
               label: 'Phone Number',
@@ -457,11 +823,11 @@ class _ConsultingPageState
 
   Widget _buildHealthInfoPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Health Information',
             style: TextStyle(
               fontSize: 24,
@@ -469,13 +835,14 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Tell us about your health condition and preferences',
             style: TextStyle(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+
+          Text(
             'Primary Health Condition *',
             style: TextStyle(
               fontSize: 16,
@@ -483,9 +850,10 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildConditionSelector(),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
+
           if (_selectedCondition == 'Others')
             Column(
               children: [
@@ -495,17 +863,19 @@ class _ConsultingPageState
                   icon: Icons.edit,
                   maxLines: 2,
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: 16),
               ],
             ),
+
           _buildTextField(
             controller: _conditionDescriptionController,
             label: 'Describe your symptoms (optional)',
             icon: Icons.description,
             maxLines: 3,
           ),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+
+          Text(
             'Panchakarma Experience',
             style: TextStyle(
               fontSize: 16,
@@ -513,10 +883,11 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
           _buildPanchakarmaExperienceSelector(),
-          const SizedBox(height: 24),
-          const Text(
+          SizedBox(height: 24),
+
+          Text(
             'Preferred Appointment',
             style: TextStyle(
               fontSize: 16,
@@ -524,31 +895,31 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
+
           Row(
             children: [
               Expanded(
                 child: _buildDateTimeSelector(
                   label: 'Date',
-                  value:
-                      '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  value: '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                   icon: Icons.calendar_today,
                   onTap: _selectDate,
                 ),
               ),
-              const SizedBox(width: 16),
+              SizedBox(width: 16),
               Expanded(
                 child: _buildDateTimeSelector(
                   label: 'Time',
-                  value:
-                      '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+                  value: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
                   icon: Icons.access_time,
                   onTap: _selectTime,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: 16),
+
           _buildTextField(
             controller: _additionalNotesController,
             label: 'Additional Notes (optional)',
@@ -562,11 +933,11 @@ class _ConsultingPageState
 
   Widget _buildSummaryPage() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Review & Submit',
             style: TextStyle(
               fontSize: 24,
@@ -574,12 +945,12 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             'Please review your information before submitting',
             style: TextStyle(color: Colors.grey[600]),
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24),
           _buildSummaryCard(),
         ],
       ),
@@ -599,26 +970,24 @@ class _ConsultingPageState
       keyboardType: keyboardType,
       maxLines: maxLines,
       validator: validator,
-      style: const TextStyle(color: AppColors.darkGreen),
+      style: TextStyle(color: AppColors.darkGreen),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, color: AppColors.primaryGreen),
-        labelStyle: const TextStyle(color: AppColors.primaryGreen),
+        labelStyle: TextStyle(color: AppColors.primaryGreen),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
+          borderSide: BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primaryGreen, width: 2),
+          borderSide: BorderSide(color: AppColors.primaryGreen, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
+          borderSide: BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
         ),
       ),
     );
@@ -633,19 +1002,17 @@ class _ConsultingPageState
       ),
       child: DropdownButtonFormField<String>(
         value: _selectedGender,
-        decoration: const InputDecoration(
+        decoration: InputDecoration(
           labelText: 'Gender',
           prefixIcon: Icon(Icons.wc, color: AppColors.primaryGreen),
           labelStyle: TextStyle(color: AppColors.primaryGreen),
           border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         items: ['Male', 'Female', 'Other'].map((String value) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(value,
-                style: const TextStyle(color: AppColors.darkGreen)),
+            child: Text(value, style: TextStyle(color: AppColors.darkGreen)),
           );
         }).toList(),
         onChanged: (String? newValue) {
@@ -666,7 +1033,7 @@ class _ConsultingPageState
           BoxShadow(
             color: AppColors.primaryGreen.withOpacity(0.08),
             blurRadius: 8,
-            offset: const Offset(0, 2),
+            offset: Offset(0, 2),
           ),
         ],
       ),
@@ -678,7 +1045,7 @@ class _ConsultingPageState
             final condition = _healthConditions[index];
             final isSelected = _selectedCondition == condition;
             return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               child: RadioListTile<String>(
                 title: Text(
                   condition,
@@ -710,11 +1077,11 @@ class _ConsultingPageState
     return Column(
       children: _panchakarmaOptions.map((option) {
         return Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
+          margin: EdgeInsets.symmetric(vertical: 4),
           child: RadioListTile<String>(
             title: Text(
               option,
-              style: const TextStyle(color: AppColors.darkGreen),
+              style: TextStyle(color: AppColors.darkGreen),
             ),
             value: option,
             groupValue: _panchakarmaExperience,
@@ -739,7 +1106,7 @@ class _ConsultingPageState
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -747,14 +1114,14 @@ class _ConsultingPageState
             BoxShadow(
               color: AppColors.primaryGreen.withOpacity(0.08),
               blurRadius: 8,
-              offset: const Offset(0, 2),
+              offset: Offset(0, 2),
             ),
           ],
         ),
         child: Row(
           children: [
             Icon(icon, color: AppColors.primaryGreen),
-            const SizedBox(width: 12),
+            SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,12 +1130,12 @@ class _ConsultingPageState
                       style: TextStyle(
                           fontSize: 12, color: Colors.grey.shade600)),
                   Text(value,
-                      style: const TextStyle(
+                      style: TextStyle(
                           fontSize: 16, color: AppColors.darkGreen)),
                 ],
               ),
             ),
-            const Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
+            Icon(Icons.arrow_drop_down, color: AppColors.primaryGreen),
           ],
         ),
       ),
@@ -777,7 +1144,7 @@ class _ConsultingPageState
 
   Widget _buildSummaryCard() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.cardGreen.withOpacity(0.5),
         borderRadius: BorderRadius.circular(12),
@@ -786,7 +1153,7 @@ class _ConsultingPageState
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
+          Text(
             'Summary',
             style: TextStyle(
               fontSize: 18,
@@ -794,27 +1161,41 @@ class _ConsultingPageState
               color: AppColors.darkGreen,
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12),
+          
+          // User Account Info
+          if (_currentUser != null) ...[
+            _buildSummaryRow('Account Email', _currentUser!.email ?? 'Not available'),
+            _buildSummaryRow('User ID', _currentUser!.uid.substring(0, 8) + '...'),
+            Divider(color: AppColors.accentGreen.withOpacity(0.5)),
+          ],
+          
+          // Personal Information
           _buildSummaryRow('Name', _nameController.text),
           _buildSummaryRow('Age', _ageController.text),
           _buildSummaryRow('Gender', _selectedGender),
           _buildSummaryRow('Phone', _phoneController.text),
-          _buildSummaryRow(
-              'Condition',
-              _selectedCondition == 'Others'
-                  ? _customConditionController.text
-                  : _selectedCondition),
+          
+          Divider(color: AppColors.accentGreen.withOpacity(0.5)),
+          
+          // Health Information
+          _buildSummaryRow('Condition', _selectedCondition == 'Others' 
+              ? _customConditionController.text 
+              : _selectedCondition),
           if (_conditionDescriptionController.text.trim().isNotEmpty)
-            _buildSummaryRow(
-                'Description', _conditionDescriptionController.text),
+            _buildSummaryRow('Description', _conditionDescriptionController.text),
           _buildSummaryRow('Experience', _panchakarmaExperience),
-          _buildSummaryRow('Preferred Date',
+          
+          Divider(color: AppColors.accentGreen.withOpacity(0.5)),
+          
+          // Appointment Information
+          _buildSummaryRow(
+              'Preferred Date',
               '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
           _buildSummaryRow('Preferred Time',
               '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
           if (_additionalNotesController.text.trim().isNotEmpty)
-            _buildSummaryRow(
-                'Additional Notes', _additionalNotesController.text),
+            _buildSummaryRow('Additional Notes', _additionalNotesController.text),
         ],
       ),
     );
@@ -822,7 +1203,7 @@ class _ConsultingPageState
 
   Widget _buildSummaryRow(String label, String value) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -830,15 +1211,21 @@ class _ConsultingPageState
             flex: 3,
             child: Text(
               '$label:',
-              style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: AppColors.darkGreen),
+              style: TextStyle(
+                  fontWeight: FontWeight.w600, 
+                  color: AppColors.darkGreen,
+                  fontSize: 13,
+              ),
             ),
           ),
           Expanded(
             flex: 5,
             child: Text(
               value.isNotEmpty ? value : '-',
-              style: TextStyle(color: Colors.grey[700]),
+              style: TextStyle(
+                color: Colors.grey[700], 
+                fontSize: 13,
+              ),
             ),
           ),
         ],
@@ -850,24 +1237,24 @@ class _ConsultingPageState
     return Container(
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
         child: Row(
           children: [
             if (_currentPage > 0)
               Expanded(
                 child: OutlinedButton(
-                  onPressed: _previousPage,
+                  onPressed: _isSubmitting ? null : _previousPage,
                   style: OutlinedButton.styleFrom(
                     foregroundColor: AppColors.primaryGreen,
-                    side: const BorderSide(color: AppColors.primaryGreen),
+                    side: BorderSide(color: AppColors.primaryGreen),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    padding: EdgeInsets.symmetric(vertical: 14),
                   ),
-                  child: const Text('Back'),
+                  child: Text('Back'),
                 ),
               ),
-            if (_currentPage > 0) const SizedBox(width: 12),
+            if (_currentPage > 0) SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
                 onPressed: _isSubmitting
@@ -878,18 +1265,25 @@ class _ConsultingPageState
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(8)),
                 ),
                 child: _isSubmitting
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                                color: Colors.white, strokeWidth: 2),
+                          ),
+                          SizedBox(width: 12),
+                          Text('Submitting...'),
+                        ],
                       )
-                    : Text(_currentPage == 2 ? 'Submit' : 'Next'),
+                    : Text(_currentPage == 2 ? 'Submit Appointment' : 'Next'),
               ),
             ),
           ],

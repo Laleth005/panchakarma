@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
-import '../screens/auth/login_screen.dart';
+import '../screens/auth/login_screen_new.dart';
 
 class AuthGuard {
   static final AuthService _authService = AuthService();
@@ -54,7 +54,7 @@ class AuthGuard {
   // Redirect to login screen
   static void _redirectToLogin(BuildContext context) {
     Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => LoginScreen()),
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
     );
   }
@@ -83,8 +83,6 @@ class AuthGuard {
       case UserRole.patient:
         // Navigator.of(context).pushReplacementNamed('/patient/dashboard');
         break;
-      default:
-        _redirectToLogin(context);
     }
   }
 }

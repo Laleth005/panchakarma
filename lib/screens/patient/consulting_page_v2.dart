@@ -138,14 +138,14 @@ class _ConsultingPageState extends State<ConsultingPage> {
         if (_searchController.text.isNotEmpty) {
           final searchLower = _searchController.text.toLowerCase();
           matchesSearch = practitioner.fullName.toLowerCase().contains(searchLower) ||
-              (practitioner.specialties.any((spec) => 
+              (practitioner.specialties != null && practitioner.specialties!.any((spec) => 
                 spec.toLowerCase().contains(searchLower)));
         }
 
         // Apply specialization filters
         if (_filters.isNotEmpty) {
-          matchesFilters = _filters.every((filter) =>
-              practitioner.specialties.contains(filter));
+          matchesFilters = practitioner.specialties != null && _filters.every((filter) =>
+              practitioner.specialties!.contains(filter));
         }
 
         return matchesSearch && matchesFilters;
@@ -416,11 +416,11 @@ class _ConsultingPageState extends State<ConsultingPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             SizedBox(height: 8),
-            if (practitioner.specialties.isNotEmpty)
+            if (practitioner.specialties != null && practitioner.specialties!.isNotEmpty)
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: practitioner.specialties.map((spec) {
+                children: practitioner.specialties!.map((spec) {
                   return Chip(
                     label: Text(spec),
                     backgroundColor: paleGreen,
@@ -973,9 +973,9 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                     ),
                   ),
                   SizedBox(height: 4),
-                  if (widget.practitioner.specialties.isNotEmpty)
+                  if (widget.practitioner.specialties != null && widget.practitioner.specialties!.isNotEmpty)
                     Text(
-                      'Specialties: ${widget.practitioner.specialties.join(", ")}',
+                      'Specialties: ${widget.practitioner.specialties!.join(", ")}',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey[700],

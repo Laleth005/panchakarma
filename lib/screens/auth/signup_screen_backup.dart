@@ -75,8 +75,16 @@ class _SignupScreenState extends State<SignupScreen> {
     });
     
     try {
-      // Use our custom registration method that handles reCAPTCHA configuration
+      // Use Firebase Auth directly for backup file
+      // This is commented out because it's a backup file and contains references to undefined RecaptchaConfiguration
+      /* 
       UserCredential userCredential = await RecaptchaConfiguration.createUserWithoutRecaptcha(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      */
+      // Placeholder for the backup file
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );

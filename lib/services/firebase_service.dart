@@ -9,15 +9,19 @@ class FirebaseAuthConfig {
   static Future<bool> configureAuth() async {
     try {
       print('Configuring Firebase Auth settings...');
+      
+      // For Android and web platform, configure auth settings
       await FirebaseAuth.instance.setSettings(
-        appVerificationDisabledForTesting: true, // Disable reCAPTCHA verification for testing
+        appVerificationDisabledForTesting: kDebugMode, // Only disable in debug mode
         forceRecaptchaFlow: false,
       );
+      
       print('Firebase Auth settings configured successfully');
       
       // Check if the settings were applied
       final user = FirebaseAuth.instance.currentUser;
       print('Current user: ${user?.uid ?? 'Not signed in'}');
+      print('Firebase Auth configured successfully');
       return true;
     } catch (e) {
       print('Error configuring Firebase Auth settings: $e');
@@ -36,6 +40,17 @@ class FirebaseAuthConfig {
       // This allows us to continue with direct Firestore auth
       return false;
     }
+  }
+  
+  // Get ActionCodeSettings for password reset
+  static ActionCodeSettings getPasswordResetSettings() {
+    return ActionCodeSettings(
+      url: 'https://panchakarma-991c8.firebaseapp.com/reset-password',
+      handleCodeInApp: true,
+      androidPackageName: 'com.example.panchakarma',
+      androidInstallApp: true,
+      androidMinimumVersion: '12',
+    );
   }
 }
 
@@ -56,6 +71,35 @@ class FirebaseService {
     } catch (e) {
       print('Error configuring Firebase Auth: $e');
       return false;
+    }
+  }
+  
+  // Log password reset events - helps with tracking and troubleshooting
+  Future<void> logPasswordResetAttempt({
+    required String email,
+    required String method,
+    required bool success,
+    String? errorMessage,
+    String? userId,
+  }) async {
+    try {
+      // Create a log entry with all relevant details
+      await _firestore.collection('system_logs').add({
+        'type': 'password_reset',
+        'email': email,
+        'userId': userId ?? 'unknown',
+        'method': method,  // 'firebase_auth', 'manual', etc.
+        'success': success,
+        'errorMessage': errorMessage,
+        'timestamp': FieldValue.serverTimestamp(),
+        'platform': kIsWeb ? 'web' : Platform.operatingSystem,
+        'appMode': kDebugMode ? 'debug' : 'release',
+      });
+      
+      print('Password reset attempt logged: $email, method: $method, success: $success');
+    } catch (e) {
+      // Don't let logging errors affect the main flow
+      print('Error logging password reset attempt: $e');
     }
   }
 

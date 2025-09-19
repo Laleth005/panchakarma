@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/practitioner_model.dart';
-import '../auth/login_screen.dart';
+import '../auth/login_screen_new.dart';
 import 'appointments_screen.dart';
 import 'patients_screen.dart';
 import 'practitioner_profile_screen.dart';

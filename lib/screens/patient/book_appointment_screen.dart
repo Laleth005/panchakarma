@@ -32,8 +32,8 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   void initState() {
     super.initState();
     // Initialize the selected specialty with the first specialty from the practitioner
-    if (widget.practitioner.specialties.isNotEmpty) {
-      _selectedSpecialty = widget.practitioner.specialties.first;
+    if (widget.practitioner.specialties != null && widget.practitioner.specialties!.isNotEmpty) {
+      _selectedSpecialty = widget.practitioner.specialties!.first;
     } else {
       _selectedSpecialty = 'General Consultation';
     }
@@ -314,7 +314,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                 Wrap(
                                   spacing: 4,
                                   runSpacing: 4,
-                                  children: widget.practitioner.specialties.isEmpty
+                                  children: widget.practitioner.specialties == null || widget.practitioner.specialties!.isEmpty
                                       ? [
                                           Chip(
                                             label: Text('Ayurvedic Practitioner'),
@@ -322,7 +322,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                             labelStyle: TextStyle(color: Colors.green[800]),
                                           )
                                         ]
-                                      : widget.practitioner.specialties.map((specialty) {
+                                      : widget.practitioner.specialties!.map((specialty) {
                                           return Chip(
                                             label: Text(specialty),
                                             backgroundColor: Colors.green.withOpacity(0.1),
@@ -362,12 +362,14 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         isExpanded: true,
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         items: [
-                          ...widget.practitioner.specialties.map(
-                            (specialty) => DropdownMenuItem<String>(
-                              value: specialty,
-                              child: Text(specialty),
-                            ),
-                          ),
+                          ...(widget.practitioner.specialties != null 
+                              ? widget.practitioner.specialties!.map(
+                                  (specialty) => DropdownMenuItem<String>(
+                                    value: specialty,
+                                    child: Text(specialty),
+                                  ),
+                                )
+                              : []),
                           DropdownMenuItem<String>(
                             value: 'General Consultation',
                             child: Text('General Consultation'),

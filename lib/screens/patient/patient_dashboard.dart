@@ -3,20 +3,22 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/auth_service.dart';
 import '../../models/patient_model.dart';
 import '../auth/login_screen_new.dart';
-import 'consulting_page_new.dart';
+import 'consulting_page.dart'; // Correct import
+
 import 'appointments_page.dart';
 import 'profile_page.dart';
 
 class PatientDashboard extends StatefulWidget {
   final String? patientId;
-  
+
   const PatientDashboard({Key? key, this.patientId}) : super(key: key);
 
   @override
   _PatientDashboardState createState() => _PatientDashboardState();
 }
 
-class _PatientDashboardState extends State<PatientDashboard> with TickerProviderStateMixin {
+class _PatientDashboardState extends State<PatientDashboard>
+    with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
   PatientModel? _patientData;
   Map<String, dynamic>? _nextAppointment;
@@ -57,28 +59,28 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     // Handle timestamps for PatientModel constructor
     DateTime createdAt = DateTime.now();
     DateTime updatedAt = DateTime.now();
-    
+
     if (data.containsKey('createdAt') && data['createdAt'] != null) {
       if (data['createdAt'] is Timestamp) {
         createdAt = (data['createdAt'] as Timestamp).toDate();
       }
     }
-    
+
     if (data.containsKey('updatedAt') && data['updatedAt'] != null) {
       if (data['updatedAt'] is Timestamp) {
         updatedAt = (data['updatedAt'] as Timestamp).toDate();
       }
     }
-    
+
     // Create a minimum patient model if missing critical data
     if (!data.containsKey('fullName') || data['fullName'] == null) {
       data['fullName'] = 'Patient';
     }
-    
+
     if (!data.containsKey('email') || data['email'] == null) {
       data['email'] = '';
     }
-    
+
     // Create patient model with the data
     return PatientModel(
       uid: data['uid'] as String,
@@ -104,55 +106,54 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     try {
       print("========== LOADING PATIENT DATA ==========");
       String? userId;
-      
+
       // Check if patientId was passed from login screen
       if (widget.patientId != null && widget.patientId!.isNotEmpty) {
         userId = widget.patientId;
       } else {
         // Use Firebase Auth to get current user
         final firebaseUser = _authService.currentUser;
-        
+
         if (firebaseUser == null) {
           print("No user is currently signed in.");
           _signOut();
           return;
         }
-        
+
         userId = firebaseUser.uid;
       }
-      
+
       // Fetch patient data directly from Firestore
       final patientDoc = await FirebaseFirestore.instance
           .collection('patients')
           .doc(userId)
           .get();
-          
+
       if (!patientDoc.exists) {
         print("No patient document found for UID: $userId");
         _signOut();
         return;
       }
-      
+
       // Create data map with UID included
       final data = patientDoc.data()!;
       data['uid'] = userId;
-      
+
       // Create patient model with safe handling of timestamps
       final patient = _createPatientFromFirestore(data);
-      
+
       setState(() {
         _patientData = patient;
         _isLoading = false;
         _isRefreshing = false;
       });
-      
+
       _fadeController.forward();
-      
+
       // Fetch next appointment if userId is not null
       if (userId != null) {
         await _fetchNextAppointment(userId);
       }
-      
     } catch (e) {
       print('Error loading patient data: $e');
       setState(() {
@@ -161,16 +162,16 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       });
     }
   }
-  
+
   /// Refresh dashboard data from Firebase
   Future<void> _refreshDashboard() async {
     // Don't do anything if already refreshing
     if (_isRefreshing) return;
-    
+
     setState(() {
       _isRefreshing = true;
     });
-    
+
     // Show a temporary "refreshing" message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -191,10 +192,10 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
         duration: Duration(seconds: 1),
       ),
     );
-    
+
     try {
       await _loadPatientData();
-      
+
       // Only show success message if still mounted
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -213,13 +214,13 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       }
     } catch (error) {
       print('Error during refresh: $error');
-      
+
       // Only show error message if still mounted
       if (mounted) {
         setState(() {
           _isRefreshing = false;
         });
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -236,7 +237,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       }
     }
   }
-  
+
   Future<void> _fetchNextAppointment(String patientId) async {
     try {
       // Simplified query that doesn't require a composite index
@@ -253,19 +254,19 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
             data['id'] = doc.id;
             return data;
           })
-          .where((data) => 
-              data['status'] == 'scheduled' && 
+          .where((data) =>
+              data['status'] == 'scheduled' &&
               data['appointmentDate'] != null &&
               (data['appointmentDate'] as Timestamp).toDate().isAfter(now))
           .toList();
-      
+
       // Sort by date
       scheduledAppointments.sort((a, b) {
         final aDate = (a['appointmentDate'] as Timestamp).toDate();
         final bDate = (b['appointmentDate'] as Timestamp).toDate();
         return aDate.compareTo(bDate);
       });
-      
+
       if (scheduledAppointments.isNotEmpty) {
         setState(() {
           _nextAppointment = scheduledAppointments[0];
@@ -335,7 +336,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
         ),
       );
     }
-    
+
     // Handle the case when patient data couldn't be loaded
     if (_patientData == null) {
       return Scaffold(
@@ -395,7 +396,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -429,7 +431,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
             children: [
               // Hero Section
               _buildHeroSection(),
-              
+
               // Main Content
               Padding(
                 padding: EdgeInsets.all(20),
@@ -441,25 +443,25 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                       _buildNextAppointmentCard(),
                       SizedBox(height: 20),
                     ],
-                    
+
                     // Quick Actions
                     _buildQuickActions(),
-                    
+
                     SizedBox(height: 24),
-                    
+
                     // About AyurSutra Section
                     _buildAboutSection(),
-                    
+
                     SizedBox(height: 20),
-                    
+
                     // Panchakarma Information
                     _buildPanchakarmaSection(),
-                    
+
                     SizedBox(height: 20),
-                    
+
                     // Benefits Section
                     _buildBenefitsSection(),
-                    
+
                     SizedBox(height: 30),
                   ],
                 ),
@@ -510,16 +512,15 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: _isRefreshing 
-              ? SizedBox(
-                  width: 18, 
-                  height: 18, 
-                  child: CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 2,
-                  )
-                )
-              : Icon(Icons.refresh, color: Colors.white, size: 20),
+            child: _isRefreshing
+                ? SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ))
+                : Icon(Icons.refresh, color: Colors.white, size: 20),
           ),
           onPressed: _isRefreshing ? null : _refreshDashboard,
           tooltip: 'Refresh',
@@ -532,7 +533,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.notifications_outlined, color: Colors.white, size: 20),
+            child: Icon(Icons.notifications_outlined,
+                color: Colors.white, size: 20),
           ),
           onPressed: () {
             // Navigate to notifications screen
@@ -589,8 +591,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                       radius: 30,
                       backgroundColor: surfaceGreen,
                       child: Text(
-                        _patientData?.fullName.isNotEmpty ?? false 
-                            ? _patientData!.fullName.substring(0, 1) 
+                        _patientData?.fullName.isNotEmpty ?? false
+                            ? _patientData!.fullName.substring(0, 1)
                             : 'P',
                         style: TextStyle(
                           fontSize: 28,
@@ -635,7 +637,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
 
   Widget _buildDrawerItem(IconData icon, String title, int index) {
     bool isSelected = index == _currentIndex;
-    
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
@@ -644,7 +646,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       ),
       child: ListTile(
         leading: Icon(
-          icon, 
+          icon,
           color: Colors.white.withOpacity(isSelected ? 1.0 : 0.8),
           size: 24,
         ),
@@ -662,7 +664,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
             });
           }
           Navigator.pop(context);
-          
+
           if (index == -1) {
             // Profile
             Navigator.push(
@@ -684,17 +686,31 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
   String _getDateSuffix(int day) {
     if (day >= 11 && day <= 13) return '${day}th';
     switch (day % 10) {
-      case 1: return '${day}st';
-      case 2: return '${day}nd';
-      case 3: return '${day}rd';
-      default: return '${day}th';
+      case 1:
+        return '${day}st';
+      case 2:
+        return '${day}nd';
+      case 3:
+        return '${day}rd';
+      default:
+        return '${day}th';
     }
   }
 
   String _getMonthName(int month) {
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December'
     ];
     return months[month - 1];
   }
@@ -719,9 +735,15 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                 'Book Consultation',
                 Icons.medical_services,
                 () {
+                  // ===============================================
+                  // 1. THIS IS THE FIRST FIX
+                  // ===============================================
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const ConsultingPage()),
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          ConsultingPage(patientId: _patientData?.uid),
+                    ),
                   );
                 },
               ),
@@ -734,7 +756,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                 () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                    MaterialPageRoute(
+                        builder: (context) => const AppointmentsPage()),
                   );
                 },
               ),
@@ -752,7 +775,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ProfilePage(patientId: _patientData?.uid),
+                      builder: (context) =>
+                          ProfilePage(patientId: _patientData?.uid),
                     ),
                   );
                 },
@@ -972,17 +996,20 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     final steps = [
       {
         'name': 'Purvakarma',
-        'description': 'Preparatory treatments including oil massage and steam therapy',
+        'description':
+            'Preparatory treatments including oil massage and steam therapy',
         'icon': Icons.spa,
       },
       {
         'name': 'Panchakarma',
-        'description': 'Five main purification procedures tailored to your constitution',
+        'description':
+            'Five main purification procedures tailored to your constitution',
         'icon': Icons.spa,
       },
       {
         'name': 'Paschatkarma',
-        'description': 'Post-treatment care with diet and lifestyle recommendations',
+        'description':
+            'Post-treatment care with diet and lifestyle recommendations',
         'icon': Icons.restaurant_menu,
       },
     ];
@@ -990,12 +1017,14 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
     return Column(
       children: steps.asMap().entries.map((entry) {
         final step = entry.value;
-        
+
         return Container(
           margin: EdgeInsets.only(bottom: 16),
           padding: EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: surfaceGreen.withOpacity(0.3),
+            color: entry.key % 2 == 0
+                ? surfaceGreen.withOpacity(0.3)
+                : lightGreen.withOpacity(0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
@@ -1087,57 +1116,59 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 1.2,
-          children: benefits.map((benefit) => Container(
-            padding: EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: primaryGreen.withOpacity(0.08),
-                  blurRadius: 10,
-                  spreadRadius: 2,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: surfaceGreen,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    benefit['icon'] as IconData,
-                    color: primaryGreen,
-                    size: 28,
-                  ),
-                ),
-                SizedBox(height: 12),
-                Text(
-                  benefit['title'] as String,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: primaryGreen,
-                  ),
-                ),
-                SizedBox(height: 6),
-                Text(
-                  benefit['description'] as String,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          )).toList(),
+          children: benefits
+              .map((benefit) => Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: primaryGreen.withOpacity(0.08),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: surfaceGreen,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            benefit['icon'] as IconData,
+                            color: primaryGreen,
+                            size: 28,
+                          ),
+                        ),
+                        SizedBox(height: 12),
+                        Text(
+                          benefit['title'] as String,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: primaryGreen,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          benefit['description'] as String,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ))
+              .toList(),
         ),
       ],
     );
@@ -1160,7 +1191,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
         currentIndex: _currentIndex > 3 ? 0 : _currentIndex,
         onTap: (index) {
           if (index == _currentIndex) return;
-          
+
           switch (index) {
             case 0: // Home
               setState(() {
@@ -1168,10 +1199,17 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
               });
               break;
             case 1: // Consulting
+              // ===============================================
+              // 2. THIS IS THE SECOND FIX
+              // ===============================================
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const ConsultingPage()),
+                MaterialPageRoute(
+                  builder: (context) =>
+                     ConsultingPage(patientId: _patientData?.uid),
+                ),
               ).then((_) {
+                // After returning from the consulting page, set the index back to home
                 setState(() {
                   _currentIndex = 0;
                 });
@@ -1191,7 +1229,8 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ProfilePage(patientId: _patientData?.uid),
+                  builder: (context) =>
+                      ProfilePage(patientId: _patientData?.uid),
                 ),
               ).then((_) {
                 setState(() {
@@ -1255,7 +1294,7 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       ),
     );
   }
-  
+
   String _getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) {
@@ -1266,18 +1305,20 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
       return 'Good Evening';
     }
   }
-  
+
   Widget _buildNextAppointmentCard() {
     if (_nextAppointment == null) {
       return SizedBox.shrink();
     }
-    
-    final appointmentDate = (_nextAppointment!['appointmentDate'] as Timestamp).toDate();
-    final formattedDate = '${_getMonthName(appointmentDate.month)} ${_getDateSuffix(appointmentDate.day)}, ${appointmentDate.year}';
-    
+
+    final appointmentDate =
+        (_nextAppointment!['appointmentDate'] as Timestamp).toDate();
+    final formattedDate =
+        '${_getMonthName(appointmentDate.month)} ${_getDateSuffix(appointmentDate.day)}, ${appointmentDate.year}';
+
     final time = _nextAppointment!['time'] ?? 'Time not specified';
     final therapy = _nextAppointment!['therapyType'] ?? 'Consultation';
-    
+
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -1412,9 +1453,10 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
   }
 
   Widget _buildHeroSection() {
-    final String patientName = _patientData != null ? _patientData!.fullName : 'Patient';
+    final String patientName =
+        _patientData != null ? _patientData!.fullName : 'Patient';
     final String greeting = _getGreeting();
-    
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -1449,7 +1491,9 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                         backgroundColor: surfaceGreen,
                         radius: 35,
                         child: Text(
-                          patientName.isNotEmpty ? patientName[0].toUpperCase() : 'P',
+                          patientName.isNotEmpty
+                              ? patientName[0].toUpperCase()
+                              : 'P',
                           style: TextStyle(
                             fontSize: 30,
                             fontWeight: FontWeight.bold,
@@ -1479,10 +1523,12 @@ class _PatientDashboardState extends State<PatientDashboard> with TickerProvider
                               color: Colors.white,
                             ),
                           ),
-                          if (_patientData != null && _patientData!.doshaType != null)
+                          if (_patientData != null &&
+                              _patientData!.doshaType != null)
                             Container(
                               margin: EdgeInsets.only(top: 8),
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
