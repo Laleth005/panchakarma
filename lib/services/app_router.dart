@@ -5,9 +5,9 @@ class AppRouter {
   // Navigation methods for Aayur Sutra application
   
   // Navigate to Practitioner Dashboard
-  static void navigateToPractitionerDashboard(BuildContext context) {
+  static void navigateToPractitionerDashboard(BuildContext context, String practitionerId) {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const PractitionerDashboard()),
+      MaterialPageRoute(builder: (context) => PractitionerMainDashboard(practitionerId: practitionerId)),
     );
   }
   

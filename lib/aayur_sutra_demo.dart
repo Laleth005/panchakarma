@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
 import 'firebase_options.dart';
-import 'screens/practitioner/practitioner_dashboard_new.dart';
+import 'screens/practitioner/practitioner_home_dashboard.dart';
 
 // This is just for demonstration - in your real app, you would integrate this
 // with your existing main.dart authentication flow
@@ -92,7 +92,8 @@ class AayurSutraApp extends StatelessWidget {
         ),
       ),
       // For demo purposes, directly showing the practitioner dashboard
-      home: PractitionerDashboardNew(),
+      // Using a placeholder practitioner ID for demo
+      home: PractitionerMainDashboard(practitionerId: 'demo_practitioner_id'),
     );
   }
 }

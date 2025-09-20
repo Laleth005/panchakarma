@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         //   _showApprovalPendingDialog();
         //   return;
         // }
-        dashboard = PractitionerHomeDashboard(practitionerId: user.uid);
+        dashboard = PractitionerMainDashboard(practitionerId: user.uid);
         break;
       case UserRole.patient:
         dashboard = PatientDashboard(patientId: user.uid);
@@ -326,7 +326,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => PractitionerHomeDashboard(practitionerId: user.uid)),
+            MaterialPageRoute(builder: (context) => PractitionerMainDashboard(practitionerId: user.uid)),
           );
         } else {
           Navigator.pushReplacement(

@@ -3,9 +3,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/practitioner_model.dart';
 import 'practitioner_edit_profile_screen.dart';
+import '../auth/login_screen_new.dart';
 
 class PractitionerProfileScreen extends StatefulWidget {
-  const PractitionerProfileScreen({Key? key}) : super(key: key);
+  final String? practitionerId;
+  
+  const PractitionerProfileScreen({Key? key, this.practitionerId}) : super(key: key);
 
   @override
   _PractitionerProfileScreenState createState() => _PractitionerProfileScreenState();
@@ -26,31 +29,56 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
     Future.microtask(() => _loadPractitionerProfile());
   }
 
-  // Helper method to get the current user ID from shared preferences
-  Future<String?> _getUserIdFromLocalStorage() async {
-    // In a real app, you would use SharedPreferences to get the stored user ID
-    // For now, we'll check if there's a user in Firestore with the email we logged in with
+  // Helper method to get the current user ID from Firebase Auth or fallback
+  Future<String?> _getCurrentUserId() async {
     try {
-      // This is a temporary solution for testing
-      // You would normally use SharedPreferences.getInstance()
-      // and then prefs.getString('userId')
+      // First priority: Use the practitionerId passed to this widget
+      if (widget.practitionerId != null && widget.practitionerId!.isNotEmpty) {
+        print('Using provided practitioner ID: ${widget.practitionerId}');
+        return widget.practitionerId;
+      }
       
-      // Since we don't have access to the login info here,
-      // we'll try to find the user by their email in the practitioners collection
+      // Second priority: try to get from Firebase Auth
+      User? firebaseUser = _auth.currentUser;
+      if (firebaseUser != null) {
+        print('Found current user from Firebase Auth: ${firebaseUser.uid}');
+        return firebaseUser.uid;
+      }
+      
+      // Third priority: try to find in practitioners collection
+      // Look for the most recently active practitioner (from recent login)
+      print('No Firebase Auth user found, searching in practitioners collection');
+      
+      // Try to find a practitioner with a recent login or activity
       final QuerySnapshot querySnapshot = await _firestore
           .collection('practitioners')
-          .where('email', isEqualTo: 'rockey1533@gmail.com') // Hardcoded for testing
+          .where('role', isEqualTo: 'practitioner')
+          .orderBy('updatedAt', descending: true)
           .limit(1)
           .get();
       
       if (querySnapshot.docs.isNotEmpty) {
         final String userId = querySnapshot.docs.first.id;
-        print('Found practitioner ID from query: $userId');
+        print('Found practitioner ID from recent activity: $userId');
         return userId;
       }
+      
+      // As a final fallback, try to find any practitioner that exists
+      final QuerySnapshot allPractitioners = await _firestore
+          .collection('practitioners')
+          .limit(1)
+          .get();
+      
+      if (allPractitioners.docs.isNotEmpty) {
+        final String userId = allPractitioners.docs.first.id;
+        print('Found any practitioner ID as fallback: $userId');
+        return userId;
+      }
+      
+      print('No practitioner found in database');
       return null;
     } catch (e) {
-      print('Error getting user ID from local storage: $e');
+      print('Error getting current user ID: $e');
       return null;
     }
   }
@@ -64,29 +92,23 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
         _errorMessage = '';
       });
       
-      // Get current user ID - check if we're using Firebase Auth or direct login
-      String? userId;
-      User? user;
+      // Get current user ID
+      String? userId = await _getCurrentUserId();
       
-      // Try to get the current user from Firebase Auth first
-      user = _auth.currentUser;
-      if (user != null) {
-        userId = user.uid;
-        print('Current user ID from Firebase Auth: $userId');
-      } else {
-        // If Firebase Auth doesn't have a current user, try to get it from local storage
-        userId = await _getUserIdFromLocalStorage();
-        if (userId == null) {
-          print('No current user found in Firebase Auth or local storage');
-          setState(() {
-            _isLoading = false;
-            _hasError = true;
-            _errorMessage = 'Not logged in. Please login again.';
-          });
-          return;
-        }
-        print('Current user ID from local storage: $userId');
+      if (userId == null) {
+        print('No current user found');
+        print('Widget practitionerId: ${widget.practitionerId}');
+        print('Firebase Auth current user: ${_auth.currentUser?.uid}');
+        
+        setState(() {
+          _isLoading = false;
+          _hasError = true;
+          _errorMessage = 'Authentication error: Unable to determine practitioner ID. Please log out and log in again.';
+        });
+        return;
       }
+      
+      print('Current user ID: $userId');
       
       // Get practitioner data
       final practitionerDoc = await _firestore.collection('practitioners').doc(userId).get();
@@ -98,7 +120,7 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
         
         try {
           // Include uid in the data map before passing to fromJson
-          data['uid'] = userId; // Use the userId we confirmed earlier
+          data['uid'] = userId;
           
           // Make sure all required fields are present
           final requiredFields = ['email', 'fullName', 'role', 'createdAt', 'updatedAt', 'specialties'];
@@ -115,16 +137,14 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
           if (missingFields) {
             print('Missing required fields: $missingFieldsList');
             // Add default values for missing fields
-            if (!data.containsKey('email')) data['email'] = user?.email ?? 'practitioner@example.com';
+            if (!data.containsKey('email')) data['email'] = 'practitioner@example.com';
             if (!data.containsKey('fullName')) data['fullName'] = 'Doctor';
             if (!data.containsKey('role')) data['role'] = 'practitioner';
             if (!data.containsKey('specialties')) data['specialties'] = [];
             if (!data.containsKey('createdAt')) {
-              // Convert server timestamp to DateTime
               data['createdAt'] = Timestamp.now();
             }
             if (!data.containsKey('updatedAt')) {
-              // Convert server timestamp to DateTime
               data['updatedAt'] = Timestamp.now();
             }
           }
@@ -161,6 +181,52 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
     }
   }
 
+  // Sign out function
+  Future<void> _signOut() async {
+    try {
+      // Show confirmation dialog
+      bool? shouldSignOut = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Sign Out'),
+            content: Text('Are you sure you want to sign out?'),
+            actions: [
+              TextButton(
+                child: Text('Cancel'),
+                onPressed: () => Navigator.of(context).pop(false),
+              ),
+              TextButton(
+                child: Text('Sign Out'),
+                onPressed: () => Navigator.of(context).pop(true),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldSignOut == true) {
+        // Sign out from Firebase Auth
+        await _auth.signOut();
+        
+        // Navigate to login screen and clear all routes
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error signing out: $e');
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error signing out. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -193,6 +259,11 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
               }
             },
           ),
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: _signOut,
+            tooltip: 'Sign Out',
+          ),
         ],
       ),
       body: _buildBody(),
@@ -220,14 +291,40 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
           children: [
             Icon(Icons.error_outline, size: 50, color: Colors.red),
             SizedBox(height: 16),
-            Text(_errorMessage, textAlign: TextAlign.center),
-            SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _loadPractitionerProfile,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Color(0xFF2E7D32),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 32),
+              child: Text(
+                _errorMessage, 
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
               ),
-              child: Text('Try Again'),
+            ),
+            SizedBox(height: 24),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ElevatedButton(
+                  onPressed: _loadPractitionerProfile,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF2E7D32),
+                  ),
+                  child: Text('Try Again'),
+                ),
+                SizedBox(width: 16),
+                OutlinedButton(
+                  onPressed: () {
+                    // Navigate back to login screen
+                    Navigator.of(context).pushAndRemoveUntil(
+                      MaterialPageRoute(builder: (context) => LoginScreen()),
+                      (route) => false,
+                    );
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Color(0xFF2E7D32),
+                  ),
+                  child: Text('Log Out'),
+                ),
+              ],
             ),
           ],
         ),
@@ -390,6 +487,32 @@ class _PractitionerProfileScreenState extends State<PractitionerProfileScreen> {
             _buildDetailItem('Account Created', _formatDate(_practitionerData!.createdAt)),
             _buildDivider(),
             _buildDetailItem('Last Updated', _formatDate(_practitionerData!.updatedAt)),
+            SizedBox(height: 24),
+            
+            // Sign out section
+            Container(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _signOut,
+                icon: Icon(Icons.logout, color: Colors.white),
+                label: Text(
+                  'Sign Out',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[600],
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  elevation: 3,
+                ),
+              ),
+            ),
           ],
         ),
       ),

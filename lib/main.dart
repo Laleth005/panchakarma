@@ -169,7 +169,7 @@ class PanchakarmaApp extends StatelessWidget {
       routes: {
         '/login': (context) => const new_login.LoginScreen(),
         '/signup': (context) => const SignupScreen(),
-        '/practitioner/dashboard': (context) => const PractitionerHomeDashboard(),
+        '/practitioner/dashboard': (context) => const PractitionerMainDashboard(practitionerId: ''),
         '/consulting': (context) => const ConsultingPage(),
         '/reset-password-verify': (context) {
           final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;

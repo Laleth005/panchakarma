@@ -757,7 +757,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                        builder: (context) => const AppointmentsPage()),
+                        builder: (context) => const PatientAppointmentsPage()),
                   );
                 },
               ),
@@ -1218,7 +1218,7 @@ class _PatientDashboardState extends State<PatientDashboard>
             case 2: // Appointments
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                MaterialPageRoute(builder: (context) => const PatientAppointmentsPage()),
               ).then((_) {
                 setState(() {
                   _currentIndex = 0;
