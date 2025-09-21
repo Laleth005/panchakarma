@@ -5,16 +5,15 @@ import '../../models/patient_model.dart';
 class PatientDetailScreen extends StatefulWidget {
   final String patientId;
 
-  const PatientDetailScreen({
-    Key? key,
-    required this.patientId,
-  }) : super(key: key);
+  const PatientDetailScreen({Key? key, required this.patientId})
+    : super(key: key);
 
   @override
   _PatientDetailScreenState createState() => _PatientDetailScreenState();
 }
 
-class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTickerProviderStateMixin {
+class _PatientDetailScreenState extends State<PatientDetailScreen>
+    with SingleTickerProviderStateMixin {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = true;
   Map<String, dynamic>? _patientData;
@@ -44,8 +43,11 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
     try {
       // Load patient profile data
-      final patientDoc = await _firestore.collection('patients').doc(widget.patientId).get();
-      
+      final patientDoc = await _firestore
+          .collection('patients')
+          .doc(widget.patientId)
+          .get();
+
       if (patientDoc.exists) {
         setState(() {
           _patientData = patientDoc.data() as Map<String, dynamic>;
@@ -77,32 +79,23 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
         setState(() {
           _appointments = appointmentsSnapshot.docs
-              .map((doc) => {
-                    ...doc.data(),
-                    'id': doc.id,
-                  })
+              .map((doc) => {...doc.data(), 'id': doc.id})
               .toList();
 
           _therapies = therapiesSnapshot.docs
-              .map((doc) => {
-                    ...doc.data(),
-                    'id': doc.id,
-                  })
+              .map((doc) => {...doc.data(), 'id': doc.id})
               .toList();
 
           _medicalRecords = recordsSnapshot.docs
-              .map((doc) => {
-                    ...doc.data(),
-                    'id': doc.id,
-                  })
+              .map((doc) => {...doc.data(), 'id': doc.id})
               .toList();
         });
       }
     } catch (e) {
       print('Error loading patient data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to load patient details')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to load patient details')));
     } finally {
       setState(() {
         _isLoading = false;
@@ -114,10 +107,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Patient Details',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: Text('Patient Details', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF2E7D32),
         actions: [
           IconButton(
@@ -141,19 +131,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
         ),
       ),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
-            )
+          ? Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
           : _patientData == null
-              ? Center(child: Text('Patient not found'))
-              : TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildProfileTab(),
-                    _buildMedicalHistoryTab(),
-                    _buildAppointmentsTab(),
-                  ],
-                ),
+          ? Center(child: Text('Patient not found'))
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildProfileTab(),
+                _buildMedicalHistoryTab(),
+                _buildAppointmentsTab(),
+              ],
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Will implement scheduling/adding new appointment
@@ -174,30 +162,63 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           SizedBox(height: 24),
           _buildInfoSection('Personal Information', [
             _buildInfoRow('Email', _patientData!['email'] ?? 'Not provided'),
-            _buildInfoRow('Phone', _patientData!['phoneNumber'] ?? 'Not provided'),
+            _buildInfoRow(
+              'Phone',
+              _patientData!['phoneNumber'] ?? 'Not provided',
+            ),
             _buildInfoRow('Gender', _patientData!['gender'] ?? 'Not specified'),
-            _buildInfoRow('Date of Birth', _patientData!['dateOfBirth'] != null 
-                ? _formatTimestamp(_patientData!['dateOfBirth'])
-                : 'Not provided'),
-            _buildInfoRow('Blood Group', _patientData!['bloodGroup'] ?? 'Not provided'),
-            _buildInfoRow('Height', _patientData!['height'] != null 
-                ? '${_patientData!['height']} cm' 
-                : 'Not provided'),
-            _buildInfoRow('Weight', _patientData!['weight'] != null 
-                ? '${_patientData!['weight']} kg' 
-                : 'Not provided'),
+            _buildInfoRow(
+              'Date of Birth',
+              _patientData!['dateOfBirth'] != null
+                  ? _formatTimestamp(_patientData!['dateOfBirth'])
+                  : 'Not provided',
+            ),
+            _buildInfoRow(
+              'Blood Group',
+              _patientData!['bloodGroup'] ?? 'Not provided',
+            ),
+            _buildInfoRow(
+              'Height',
+              _patientData!['height'] != null
+                  ? '${_patientData!['height']} cm'
+                  : 'Not provided',
+            ),
+            _buildInfoRow(
+              'Weight',
+              _patientData!['weight'] != null
+                  ? '${_patientData!['weight']} kg'
+                  : 'Not provided',
+            ),
           ]),
           SizedBox(height: 16),
           _buildInfoSection('Medical Information', [
-            _buildInfoRow('Allergies', _formatFieldValue(_patientData!['allergies'])),
-            _buildInfoRow('Current Medications', _formatFieldValue(_patientData!['currentMedications'])),
-            _buildInfoRow('Medical Conditions', _formatFieldValue(_patientData!['medicalConditions'])),
+            _buildInfoRow(
+              'Allergies',
+              _formatFieldValue(_patientData!['allergies']),
+            ),
+            _buildInfoRow(
+              'Current Medications',
+              _formatFieldValue(_patientData!['currentMedications']),
+            ),
+            _buildInfoRow(
+              'Medical Conditions',
+              _formatFieldValue(_patientData!['medicalConditions']),
+            ),
           ]),
           SizedBox(height: 16),
           _buildInfoSection('Emergency Contact', [
-            _buildInfoRow('Name', _patientData!['emergencyContactName'] ?? 'Not provided'),
-            _buildInfoRow('Phone', _patientData!['emergencyContactPhone'] ?? 'Not provided'),
-            _buildInfoRow('Relationship', _patientData!['emergencyContactRelation'] ?? 'Not provided'),
+            _buildInfoRow(
+              'Name',
+              _patientData!['emergencyContactName'] ?? 'Not provided',
+            ),
+            _buildInfoRow(
+              'Phone',
+              _patientData!['emergencyContactPhone'] ?? 'Not provided',
+            ),
+            _buildInfoRow(
+              'Relationship',
+              _patientData!['emergencyContactRelation'] ?? 'Not provided',
+            ),
           ]),
         ],
       ),
@@ -207,9 +228,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Widget _buildPatientHeader() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Row(
@@ -225,25 +244,17 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                 children: [
                   Text(
                     _patientData!['fullName'] ?? 'Unknown Patient',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 20,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
                   ),
                   SizedBox(height: 4),
                   Text(
                     _patientData!['email'] ?? 'No email',
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                   SizedBox(height: 4),
                   Text(
                     'Patient ID: ${widget.patientId}',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
                   ),
                 ],
               ),
@@ -257,9 +268,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
   Widget _buildInfoSection(String title, List<Widget> children) {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -299,12 +308,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
           ),
           SizedBox(width: 8),
           Expanded(
-            child: Text(
-              value,
-              style: TextStyle(
-                color: Colors.black87,
-              ),
-            ),
+            child: Text(value, style: TextStyle(color: Colors.black87)),
           ),
         ],
       ),
@@ -325,10 +329,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             SizedBox(height: 16),
             Text(
               'No medical records found',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
             SizedBox(height: 16),
             ElevatedButton(
@@ -377,10 +378,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                       record['recordDate'] != null
                           ? _formatTimestamp(record['recordDate'])
                           : 'Unknown date',
-                      style: TextStyle(
-                        color: Colors.grey,
-                        fontSize: 12,
-                      ),
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
                   ],
                 ),
@@ -416,10 +414,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
             SizedBox(height: 16),
             Text(
               'No appointments found',
-              style: TextStyle(
-                color: Colors.grey.shade600,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 16),
             ),
             SizedBox(height: 16),
             ElevatedButton(
@@ -464,7 +459,9 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
                         color: Color(0xFF2E7D32),
                       ),
                     ),
-                    _buildAppointmentStatusChip(appointment['status'] ?? 'scheduled'),
+                    _buildAppointmentStatusChip(
+                      appointment['status'] ?? 'scheduled',
+                    ),
                   ],
                 ),
                 SizedBox(height: 8),
@@ -530,10 +527,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     return Chip(
       label: Text(
         status.capitalize(),
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 12,
-        ),
+        style: TextStyle(color: Colors.white, fontSize: 12),
       ),
       backgroundColor: chipColor,
       avatar: Icon(chipIcon, color: Colors.white, size: 16),
@@ -544,10 +538,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   Widget _buildPatientAvatar(String name, String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 30,
-        backgroundImage: NetworkImage(imageUrl),
-      );
+      return CircleAvatar(radius: 30, backgroundImage: NetworkImage(imageUrl));
     } else {
       return CircleAvatar(
         radius: 30,
@@ -566,7 +557,7 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
 
   String _formatTimestamp(dynamic timestamp) {
     if (timestamp == null) return 'N/A';
-    
+
     DateTime date;
     if (timestamp is Timestamp) {
       date = timestamp.toDate();
@@ -579,13 +570,13 @@ class _PatientDetailScreenState extends State<PatientDetailScreen> with SingleTi
     } else {
       return 'Invalid date';
     }
-    
+
     return '${date.day}/${date.month}/${date.year}';
   }
-  
+
   String _formatFieldValue(dynamic value) {
     if (value == null) return 'None recorded';
-    
+
     if (value is List) {
       return value.isEmpty ? 'None recorded' : value.join(', ');
     } else if (value is String) {

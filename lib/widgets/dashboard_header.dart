@@ -18,7 +18,7 @@ class DashboardHeader extends StatelessWidget {
     // Get greeting based on time of day
     final hour = DateTime.now().hour;
     String greeting = '';
-    
+
     if (hour < 12) {
       greeting = 'Good Morning';
     } else if (hour < 17) {
@@ -26,7 +26,7 @@ class DashboardHeader extends StatelessWidget {
     } else {
       greeting = 'Good Evening';
     }
-    
+
     // Get current date
     final dateStr = DateFormat('EEEE, MMMM d, yyyy').format(DateTime.now());
 
@@ -45,10 +45,7 @@ class DashboardHeader extends StatelessWidget {
                 children: [
                   Text(
                     greeting,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.grey),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -61,28 +58,26 @@ class DashboardHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     dateStr,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
                   ),
                 ],
               ),
             ),
-            
+
             // Profile image
             InkWell(
               onTap: onProfileTap,
               borderRadius: BorderRadius.circular(30),
               child: CircleAvatar(
                 radius: 30,
-                backgroundImage: profileImageUrl != null && profileImageUrl!.isNotEmpty
+                backgroundImage:
+                    profileImageUrl != null && profileImageUrl!.isNotEmpty
                     ? NetworkImage(profileImageUrl!)
                     : null,
                 child: profileImageUrl == null || profileImageUrl!.isEmpty
                     ? Text(
-                        practitionerName.isNotEmpty 
-                            ? practitionerName[0].toUpperCase() 
+                        practitionerName.isNotEmpty
+                            ? practitionerName[0].toUpperCase()
                             : 'P',
                         style: const TextStyle(fontSize: 24),
                       )

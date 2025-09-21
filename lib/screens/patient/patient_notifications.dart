@@ -4,10 +4,12 @@ class PatientNotificationsScreen extends StatefulWidget {
   const PatientNotificationsScreen({Key? key}) : super(key: key);
 
   @override
-  _PatientNotificationsScreenState createState() => _PatientNotificationsScreenState();
+  _PatientNotificationsScreenState createState() =>
+      _PatientNotificationsScreenState();
 }
 
-class _PatientNotificationsScreenState extends State<PatientNotificationsScreen> with SingleTickerProviderStateMixin {
+class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isLoading = true;
   List<Map<String, dynamic>> _notifications = [];
@@ -22,14 +24,15 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
   Future<void> _loadNotifications() async {
     // Simulating API call
     await Future.delayed(Duration(seconds: 1));
-    
+
     // Sample notification data - replace with actual data from Firebase
     setState(() {
       _notifications = [
         {
           'id': '1',
           'title': 'Appointment Reminder',
-          'message': 'You have a Shirodhara session scheduled for tomorrow at 10:00 AM.',
+          'message':
+              'You have a Shirodhara session scheduled for tomorrow at 10:00 AM.',
           'timestamp': DateTime.now().subtract(Duration(hours: 2)),
           'isRead': false,
           'type': 'appointment',
@@ -37,7 +40,8 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         {
           'id': '2',
           'title': 'Treatment Completed',
-          'message': 'Your Abhyanga treatment has been marked as completed. How did you feel?',
+          'message':
+              'Your Abhyanga treatment has been marked as completed. How did you feel?',
           'timestamp': DateTime.now().subtract(Duration(days: 1)),
           'isRead': true,
           'type': 'treatment',
@@ -45,7 +49,8 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         {
           'id': '3',
           'title': 'Diet Recommendation',
-          'message': 'Dr. Sharma has updated your diet plan. Check it out in your treatment plan section.',
+          'message':
+              'Dr. Sharma has updated your diet plan. Check it out in your treatment plan section.',
           'timestamp': DateTime.now().subtract(Duration(days: 2)),
           'isRead': false,
           'type': 'recommendation',
@@ -53,7 +58,8 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         {
           'id': '4',
           'title': 'New Article',
-          'message': 'New article published: "Understanding Your Dosha Type". Read now to learn more about Ayurvedic body types.',
+          'message':
+              'New article published: "Understanding Your Dosha Type". Read now to learn more about Ayurvedic body types.',
           'timestamp': DateTime.now().subtract(Duration(days: 3)),
           'isRead': true,
           'type': 'general',
@@ -61,7 +67,8 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         {
           'id': '5',
           'title': 'Practitioner Message',
-          'message': 'Dr. Patel has sent you a message regarding your upcoming treatment plan.',
+          'message':
+              'Dr. Patel has sent you a message regarding your upcoming treatment plan.',
           'timestamp': DateTime.now().subtract(Duration(days: 5)),
           'isRead': true,
           'type': 'message',
@@ -102,7 +109,10 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
                     Row(
                       children: [
                         IconButton(
-                          icon: Icon(Icons.check_circle_outline, color: Colors.white),
+                          icon: Icon(
+                            Icons.check_circle_outline,
+                            color: Colors.white,
+                          ),
                           onPressed: _markAllAsRead,
                           tooltip: 'Mark all as read',
                         ),
@@ -130,7 +140,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
             ],
           ),
         ),
-        
+
         // Tab content
         Expanded(
           child: TabBarView(
@@ -148,14 +158,14 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
   Widget _buildNotificationList(bool unreadOnly) {
     if (_isLoading) {
       return Center(
-        child: CircularProgressIndicator(
-          color: Colors.green.shade700,
-        ),
+        child: CircularProgressIndicator(color: Colors.green.shade700),
       );
     }
 
     final filteredNotifications = unreadOnly
-        ? _notifications.where((notification) => notification['isRead'] == false).toList()
+        ? _notifications
+              .where((notification) => notification['isRead'] == false)
+              .toList()
         : _notifications;
 
     if (filteredNotifications.isEmpty) {
@@ -171,10 +181,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
             SizedBox(height: 16),
             Text(
               unreadOnly ? 'No unread notifications' : 'No notifications',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -207,10 +214,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         color: Colors.red,
         alignment: Alignment.centerRight,
         padding: EdgeInsets.only(right: 20.0),
-        child: Icon(
-          Icons.delete,
-          color: Colors.white,
-        ),
+        child: Icon(Icons.delete, color: Colors.white),
       ),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
@@ -247,7 +251,9 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
                             child: Text(
                               notification['title'],
                               style: TextStyle(
-                                fontWeight: isRead ? FontWeight.normal : FontWeight.bold,
+                                fontWeight: isRead
+                                    ? FontWeight.normal
+                                    : FontWeight.bold,
                                 fontSize: 16,
                               ),
                               maxLines: 1,
@@ -279,10 +285,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
                         children: [
                           Text(
                             timeAgo,
-                            style: TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
                           ),
                           TextButton(
                             onPressed: () {
@@ -298,7 +301,10 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
                             ),
                             style: TextButton.styleFrom(
                               minimumSize: Size(0, 0),
-                              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
                           ),
@@ -349,11 +355,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         color: iconColor.withOpacity(0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(
-        iconData,
-        color: iconColor,
-        size: 24,
-      ),
+      child: Icon(iconData, color: iconColor, size: 24),
     );
   }
 
@@ -392,7 +394,9 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
 
   void _markAsRead(String id) {
     setState(() {
-      final index = _notifications.indexWhere((notification) => notification['id'] == id);
+      final index = _notifications.indexWhere(
+        (notification) => notification['id'] == id,
+      );
       if (index != -1) {
         _notifications[index]['isRead'] = true;
       }
@@ -405,7 +409,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
         notification['isRead'] = true;
       }
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('All notifications marked as read'),
@@ -448,10 +452,7 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
                 ),
               );
             },
-            child: Text(
-              'CLEAR',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: Text('CLEAR', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
@@ -461,10 +462,10 @@ class _PatientNotificationsScreenState extends State<PatientNotificationsScreen>
   void _handleNotificationAction(Map<String, dynamic> notification) {
     // Implement navigation based on notification type
     final type = notification['type'] as String;
-    
+
     // Mark as read when action is taken
     _markAsRead(notification['id']);
-    
+
     switch (type) {
       case 'appointment':
         // Navigate to appointments tab

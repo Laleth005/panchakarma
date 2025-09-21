@@ -1,12 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-enum SessionStatus {
-  pending,
-  inProgress,
-  completed,
-  cancelled
-}
+enum SessionStatus { pending, inProgress, completed, cancelled }
 
 extension SessionStatusExtension on SessionStatus {
   String get name {
@@ -21,7 +16,7 @@ extension SessionStatusExtension on SessionStatus {
         return 'Cancelled';
     }
   }
-  
+
   Color get color {
     switch (this) {
       case SessionStatus.pending:
@@ -153,7 +148,8 @@ class TherapySessionModel {
       notes: notes ?? this.notes,
       practitionerId: practitionerId ?? this.practitionerId,
       practitionerName: practitionerName ?? this.practitionerName,
-      hasSpecialInstructions: hasSpecialInstructions ?? this.hasSpecialInstructions,
+      hasSpecialInstructions:
+          hasSpecialInstructions ?? this.hasSpecialInstructions,
       specialInstructions: specialInstructions ?? this.specialInstructions,
     );
   }

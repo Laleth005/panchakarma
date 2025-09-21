@@ -20,12 +20,10 @@ class ConsultingPage extends StatefulWidget {
   const ConsultingPage({super.key, this.patientId});
 
   @override
-  _ConsultingPageState createState() =>
-      _ConsultingPageState();
+  _ConsultingPageState createState() => _ConsultingPageState();
 }
 
-class _ConsultingPageState
-    extends State<ConsultingPage> {
+class _ConsultingPageState extends State<ConsultingPage> {
   final _formKey = GlobalKey<FormState>();
   final PageController _pageController = PageController();
   int _currentPage = 0;
@@ -328,7 +326,8 @@ class _ConsultingPageState
           Expanded(
             child: PageView(
               controller: _pageController,
-              physics: const NeverScrollableScrollPhysics(), // Prevents manual swiping
+              physics:
+                  const NeverScrollableScrollPhysics(), // Prevents manual swiping
               onPageChanged: (index) {
                 setState(() {
                   _currentPage = index;
@@ -362,8 +361,9 @@ class _ConsultingPageState
                 child: LinearProgressIndicator(
                   value: i <= _currentPage ? 1.0 : 0.0,
                   backgroundColor: Colors.grey.shade300,
-                  valueColor:
-                      const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryGreen,
+                  ),
                   minHeight: 4,
                 ),
               ),
@@ -428,9 +428,7 @@ class _ConsultingPageState
                   ),
                 ),
                 const SizedBox(width: 16),
-                Expanded(
-                  child: _buildGenderSelector(),
-                ),
+                Expanded(child: _buildGenderSelector()),
               ],
             ),
             const SizedBox(height: 16),
@@ -608,8 +606,7 @@ class _ConsultingPageState
         fillColor: Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
+          borderSide: BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -617,8 +614,7 @@ class _ConsultingPageState
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide:
-              BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
+          borderSide: BorderSide(color: AppColors.accentGreen.withOpacity(0.3)),
         ),
       ),
     );
@@ -638,14 +634,15 @@ class _ConsultingPageState
           prefixIcon: Icon(Icons.wc, color: AppColors.primaryGreen),
           labelStyle: TextStyle(color: AppColors.primaryGreen),
           border: InputBorder.none,
-          contentPadding:
-              EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         ),
         items: ['Male', 'Female', 'Other'].map((String value) {
           return DropdownMenuItem<String>(
             value: value,
-            child: Text(value,
-                style: const TextStyle(color: AppColors.darkGreen)),
+            child: Text(
+              value,
+              style: const TextStyle(color: AppColors.darkGreen),
+            ),
           );
         }).toList(),
         onChanged: (String? newValue) {
@@ -686,8 +683,9 @@ class _ConsultingPageState
                     color: isSelected
                         ? AppColors.primaryGreen
                         : AppColors.darkGreen,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
                 value: condition,
@@ -759,12 +757,17 @@ class _ConsultingPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.grey.shade600)),
-                  Text(value,
-                      style: const TextStyle(
-                          fontSize: 16, color: AppColors.darkGreen)),
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: AppColors.darkGreen,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -800,21 +803,30 @@ class _ConsultingPageState
           _buildSummaryRow('Gender', _selectedGender),
           _buildSummaryRow('Phone', _phoneController.text),
           _buildSummaryRow(
-              'Condition',
-              _selectedCondition == 'Others'
-                  ? _customConditionController.text
-                  : _selectedCondition),
+            'Condition',
+            _selectedCondition == 'Others'
+                ? _customConditionController.text
+                : _selectedCondition,
+          ),
           if (_conditionDescriptionController.text.trim().isNotEmpty)
             _buildSummaryRow(
-                'Description', _conditionDescriptionController.text),
+              'Description',
+              _conditionDescriptionController.text,
+            ),
           _buildSummaryRow('Experience', _panchakarmaExperience),
-          _buildSummaryRow('Preferred Date',
-              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
-          _buildSummaryRow('Preferred Time',
-              '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
+          _buildSummaryRow(
+            'Preferred Date',
+            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+          ),
+          _buildSummaryRow(
+            'Preferred Time',
+            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+          ),
           if (_additionalNotesController.text.trim().isNotEmpty)
             _buildSummaryRow(
-                'Additional Notes', _additionalNotesController.text),
+              'Additional Notes',
+              _additionalNotesController.text,
+            ),
         ],
       ),
     );
@@ -831,7 +843,9 @@ class _ConsultingPageState
             child: Text(
               '$label:',
               style: const TextStyle(
-                  fontWeight: FontWeight.w600, color: AppColors.darkGreen),
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreen,
+              ),
             ),
           ),
           Expanded(
@@ -861,7 +875,8 @@ class _ConsultingPageState
                     foregroundColor: AppColors.primaryGreen,
                     side: const BorderSide(color: AppColors.primaryGreen),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     padding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: const Text('Back'),
@@ -873,21 +888,24 @@ class _ConsultingPageState
                 onPressed: _isSubmitting
                     ? null
                     : _currentPage == 2
-                        ? _submitForm
-                        : _nextPage,
+                    ? _submitForm
+                    : _nextPage,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isSubmitting
                     ? const SizedBox(
                         width: 20,
                         height: 20,
                         child: CircularProgressIndicator(
-                            color: Colors.white, strokeWidth: 2),
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
                       )
                     : Text(_currentPage == 2 ? 'Submit' : 'Next'),
               ),

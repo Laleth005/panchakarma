@@ -14,7 +14,8 @@ class NotificationsAlertsPanel extends StatefulWidget {
   });
 
   @override
-  State<NotificationsAlertsPanel> createState() => _NotificationsAlertsPanelState();
+  State<NotificationsAlertsPanel> createState() =>
+      _NotificationsAlertsPanelState();
 }
 
 class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
@@ -31,10 +32,12 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
     setState(() {
       _isLoading = true;
     });
-    
+
     // In a real app, this would come from a repository or service
-    final notifications = DummyNotificationData.getNotifications(widget.practitionerId);
-    
+    final notifications = DummyNotificationData.getNotifications(
+      widget.practitionerId,
+    );
+
     setState(() {
       _notifications = notifications;
       _isLoading = false;
@@ -46,7 +49,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
       final index = _notifications.indexWhere((n) => n.id == notificationId);
       if (index != -1) {
         final notification = _notifications[index];
-        
+
         // Create a new notification with isRead set to true
         final updatedNotification = NotificationModel(
           id: notification.id,
@@ -61,7 +64,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
           sessionId: notification.sessionId,
           additionalData: notification.additionalData,
         );
-        
+
         // Replace the old notification with the updated one
         _notifications[index] = updatedNotification;
       }
@@ -111,10 +114,16 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                         backgroundColor: Colors.red,
                         label: Text(
                           '${_notifications.where((n) => !n.isRead).length}',
-                          style: const TextStyle(color: Colors.white, fontSize: 10),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                          ),
                         ),
                         child: IconButton(
-                          icon: const Icon(Icons.notifications_active, color: Colors.amber),
+                          icon: const Icon(
+                            Icons.notifications_active,
+                            color: Colors.amber,
+                          ),
                           onPressed: () {
                             // Mark all as read option
                             final snackBar = SnackBar(
@@ -123,7 +132,9 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                                 label: 'YES',
                                 onPressed: () {
                                   setState(() {
-                                    _notifications = _notifications.map((notification) {
+                                    _notifications = _notifications.map((
+                                      notification,
+                                    ) {
                                       return NotificationModel(
                                         id: notification.id,
                                         title: notification.title,
@@ -131,24 +142,31 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                                         timestamp: notification.timestamp,
                                         type: notification.type,
                                         isRead: true,
-                                        practitionerId: notification.practitionerId,
+                                        practitionerId:
+                                            notification.practitionerId,
                                         patientId: notification.patientId,
                                         patientName: notification.patientName,
                                         sessionId: notification.sessionId,
-                                        additionalData: notification.additionalData,
+                                        additionalData:
+                                            notification.additionalData,
                                       );
                                     }).toList();
                                   });
                                 },
                               ),
                             );
-                            ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                            ScaffoldMessenger.of(
+                              context,
+                            ).showSnackBar(snackBar);
                           },
                         ),
                       )
                     else
                       IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.grey),
+                        icon: const Icon(
+                          Icons.notifications_none,
+                          color: Colors.grey,
+                        ),
                         onPressed: () {},
                         tooltip: 'No unread notifications',
                       ),
@@ -163,7 +181,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
       ),
     );
   }
-  
+
   Widget _buildNotificationList() {
     if (_isLoading) {
       return const Padding(
@@ -171,7 +189,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
         child: Center(child: CircularProgressIndicator()),
       );
     }
-    
+
     if (_notifications.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(24.0),
@@ -180,16 +198,13 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
             children: [
               Icon(Icons.notifications_off, size: 48, color: Colors.grey),
               SizedBox(height: 16),
-              Text(
-                'No notifications',
-                style: TextStyle(color: Colors.grey),
-              ),
+              Text('No notifications', style: TextStyle(color: Colors.grey)),
             ],
           ),
         ),
       );
     }
-    
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -243,10 +258,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
         color: Colors.red,
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white),
       ),
       direction: DismissDirection.endToStart,
       onDismissed: (direction) {
@@ -280,11 +292,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                   shape: BoxShape.circle,
                 ),
                 padding: const EdgeInsets.all(8),
-                child: Icon(
-                  iconData,
-                  color: iconColor,
-                  size: 24,
-                ),
+                child: Icon(iconData, color: iconColor, size: 24),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -297,7 +305,9 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                           child: Text(
                             notification.title,
                             style: TextStyle(
-                              fontWeight: notification.isRead ? FontWeight.normal : FontWeight.bold,
+                              fontWeight: notification.isRead
+                                  ? FontWeight.normal
+                                  : FontWeight.bold,
                               fontSize: 16,
                             ),
                           ),
@@ -324,7 +334,8 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                       children: [
                         if (notification.patientName != null)
                           Chip(
-                            materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
                             visualDensity: VisualDensity.compact,
                             label: Text(
                               notification.patientName!,
@@ -339,7 +350,10 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
                           TextButton(
                             onPressed: () => _markAsRead(notification.id),
                             style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               minimumSize: Size.zero,
                               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                             ),
@@ -360,7 +374,7 @@ class _NotificationsAlertsPanelState extends State<NotificationsAlertsPanel> {
   String _getTimeAgo(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    
+
     if (difference.inDays > 1) {
       return DateFormat('MMM d, h:mm a').format(dateTime);
     } else if (difference.inDays == 1) {

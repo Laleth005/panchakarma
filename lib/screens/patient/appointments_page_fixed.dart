@@ -66,9 +66,12 @@ class _AppointmentsPageState extends State<AppointmentsPage>
         // Parse appointment date
         DateTime appointmentDate;
         if (appointment['appointmentDateTime'] is Timestamp) {
-          appointmentDate = (appointment['appointmentDateTime'] as Timestamp).toDate();
+          appointmentDate = (appointment['appointmentDateTime'] as Timestamp)
+              .toDate();
         } else {
-          appointmentDate = DateTime.parse(appointment['appointmentDateTime'].toString());
+          appointmentDate = DateTime.parse(
+            appointment['appointmentDateTime'].toString(),
+          );
         }
 
         if (appointmentDate.isAfter(now)) {
@@ -98,10 +101,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       appBar: AppBar(
         title: Text(
           'My Appointments',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: AppColors.primaryGreen,
         elevation: 2,
@@ -126,7 +126,9 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       body: _isLoading
           ? Center(
               child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  AppColors.primaryGreen,
+                ),
               ),
             )
           : TabBarView(
@@ -184,11 +186,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            icon,
-            size: 80,
-            color: AppColors.accentGreen,
-          ),
+          Icon(icon, size: 80, color: AppColors.accentGreen),
           SizedBox(height: 24),
           Text(
             title,
@@ -201,10 +199,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
           SizedBox(height: 8),
           Text(
             subtitle,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
             textAlign: TextAlign.center,
           ),
         ],
@@ -212,12 +207,18 @@ class _AppointmentsPageState extends State<AppointmentsPage>
     );
   }
 
-  Widget _buildAppointmentCard(Map<String, dynamic> appointment, bool isUpcoming) {
+  Widget _buildAppointmentCard(
+    Map<String, dynamic> appointment,
+    bool isUpcoming,
+  ) {
     DateTime appointmentDate;
     if (appointment['appointmentDateTime'] is Timestamp) {
-      appointmentDate = (appointment['appointmentDateTime'] as Timestamp).toDate();
+      appointmentDate = (appointment['appointmentDateTime'] as Timestamp)
+          .toDate();
     } else {
-      appointmentDate = DateTime.parse(appointment['appointmentDateTime'].toString());
+      appointmentDate = DateTime.parse(
+        appointment['appointmentDateTime'].toString(),
+      );
     }
 
     String status = appointment['status'] ?? 'pending';
@@ -231,10 +232,7 @@ class _AppointmentsPageState extends State<AppointmentsPage>
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
           border: Border(
-            left: BorderSide(
-              color: _getStatusColor(status),
-              width: 4,
-            ),
+            left: BorderSide(color: _getStatusColor(status), width: 4),
           ),
         ),
         child: Padding(
@@ -259,7 +257,11 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               SizedBox(height: 12),
               Row(
                 children: [
-                  Icon(Icons.calendar_today, color: AppColors.accentGreen, size: 20),
+                  Icon(
+                    Icons.calendar_today,
+                    color: AppColors.accentGreen,
+                    size: 20,
+                  ),
                   SizedBox(width: 8),
                   Text(
                     '${appointmentDate.day}/${appointmentDate.month}/${appointmentDate.year}',
@@ -270,19 +272,24 @@ class _AppointmentsPageState extends State<AppointmentsPage>
               SizedBox(height: 8),
               Row(
                 children: [
-                  Icon(Icons.access_time, color: AppColors.accentGreen, size: 20),
-                  SizedBox(width: 8),
-                  Text(
-                    appointmentTime,
-                    style: TextStyle(fontSize: 16),
+                  Icon(
+                    Icons.access_time,
+                    color: AppColors.accentGreen,
+                    size: 20,
                   ),
+                  SizedBox(width: 8),
+                  Text(appointmentTime, style: TextStyle(fontSize: 16)),
                 ],
               ),
               if (appointment['healthCondition'] != null) ...[
                 SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.medical_services, color: AppColors.accentGreen, size: 20),
+                    Icon(
+                      Icons.medical_services,
+                      color: AppColors.accentGreen,
+                      size: 20,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -408,14 +415,14 @@ class _AppointmentsPageState extends State<AppointmentsPage>
             .collection('appointments')
             .doc(appointmentId)
             .update({'status': 'cancelled'});
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Appointment cancelled successfully'),
             backgroundColor: AppColors.primaryGreen,
           ),
         );
-        
+
         _loadAppointments(); // Refresh the list
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(

@@ -38,11 +38,13 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     widget.onLoadingStateChanged(true);
-    
+
     try {
-      final sessions = await _repository.getTodaySessions(widget.practitionerId);
+      final sessions = await _repository.getTodaySessions(
+        widget.practitionerId,
+      );
       setState(() {
         _sessions = sessions;
         _isLoading = false;
@@ -53,13 +55,19 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
         _hasError = true;
       });
     }
-    
+
     widget.onLoadingStateChanged(false);
   }
 
-  Future<void> _updateSessionStatus(TherapySessionModel session, SessionStatus newStatus) async {
-    final success = await _repository.updateSessionStatus(session.id, newStatus);
-    
+  Future<void> _updateSessionStatus(
+    TherapySessionModel session,
+    SessionStatus newStatus,
+  ) async {
+    final success = await _repository.updateSessionStatus(
+      session.id,
+      newStatus,
+    );
+
     if (success) {
       setState(() {
         final index = _sessions.indexWhere((s) => s.id == session.id);
@@ -67,7 +75,7 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
           _sessions[index] = session.copyWith(status: newStatus);
         }
       });
-      
+
       widget.onStatusChange(session, newStatus);
     }
   }
@@ -123,16 +131,17 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Error loading schedule',
                       style: TextStyle(color: Colors.red.shade700),
                     ),
-                    TextButton(
-                      onPressed: _loadSessions,
-                      child: Text('Retry'),
-                    ),
+                    TextButton(onPressed: _loadSessions, child: Text('Retry')),
                   ],
                 ),
               ),
@@ -143,7 +152,11 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.event_available, size: 48, color: Colors.grey.shade400),
+                    Icon(
+                      Icons.event_available,
+                      size: 48,
+                      color: Colors.grey.shade400,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'No sessions scheduled for today',
@@ -217,9 +230,7 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
                       Expanded(
                         child: Text(
                           '${session.therapyType} (${session.durationMinutes} min)',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                          ),
+                          style: TextStyle(color: Colors.grey.shade700),
                         ),
                       ),
                       Text(
@@ -242,7 +253,11 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.info_outline, size: 16, color: Colors.amber.shade800),
+                          Icon(
+                            Icons.info_outline,
+                            size: 16,
+                            color: Colors.amber.shade800,
+                          ),
                           SizedBox(width: 4),
                           Text(
                             'Special Instructions',
@@ -260,7 +275,10 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
                     children: [
                       Expanded(
                         child: Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
                           decoration: BoxDecoration(
                             color: session.status.color.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(4),
@@ -279,10 +297,16 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
                         TextButton.icon(
                           icon: Icon(Icons.play_arrow, size: 16),
                           label: Text('Start'),
-                          onPressed: () => _updateSessionStatus(session, SessionStatus.inProgress),
+                          onPressed: () => _updateSessionStatus(
+                            session,
+                            SessionStatus.inProgress,
+                          ),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.blue,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
                             minimumSize: Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
@@ -291,10 +315,16 @@ class _TodaySchedulePanelState extends State<TodaySchedulePanel> {
                         TextButton.icon(
                           icon: Icon(Icons.check_circle_outline, size: 16),
                           label: Text('Complete'),
-                          onPressed: () => _updateSessionStatus(session, SessionStatus.completed),
+                          onPressed: () => _updateSessionStatus(
+                            session,
+                            SessionStatus.completed,
+                          ),
                           style: TextButton.styleFrom(
                             foregroundColor: Colors.green,
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 4,
+                            ),
                             minimumSize: Size(0, 0),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),

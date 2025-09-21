@@ -3,33 +3,43 @@ import '../../models/patient_model.dart';
 
 class PatientProfileScreen extends StatefulWidget {
   final PatientModel? patientData;
-  
+
   const PatientProfileScreen({Key? key, this.patientData}) : super(key: key);
-  
+
   @override
   _PatientProfileScreenState createState() => _PatientProfileScreenState();
 }
 
 class _PatientProfileScreenState extends State<PatientProfileScreen> {
   bool _isEditing = false;
-  
+
   // Controllers for text fields
   late TextEditingController _nameController;
   late TextEditingController _phoneController;
   late TextEditingController _addressController;
   late TextEditingController _allergiesController;
   late TextEditingController _medicalHistoryController;
-  
+
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.patientData?.fullName ?? '');
-    _phoneController = TextEditingController(text: widget.patientData?.phoneNumber ?? '');
-    _addressController = TextEditingController(text: widget.patientData?.address ?? '');
-    _allergiesController = TextEditingController(text: widget.patientData?.allergies ?? '');
-    _medicalHistoryController = TextEditingController(text: widget.patientData?.medicalHistory ?? '');
+    _nameController = TextEditingController(
+      text: widget.patientData?.fullName ?? '',
+    );
+    _phoneController = TextEditingController(
+      text: widget.patientData?.phoneNumber ?? '',
+    );
+    _addressController = TextEditingController(
+      text: widget.patientData?.address ?? '',
+    );
+    _allergiesController = TextEditingController(
+      text: widget.patientData?.allergies ?? '',
+    );
+    _medicalHistoryController = TextEditingController(
+      text: widget.patientData?.medicalHistory ?? '',
+    );
   }
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -39,7 +49,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
     _medicalHistoryController.dispose();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -63,17 +73,12 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                 SizedBox(height: 16),
                 Text(
                   widget.patientData?.fullName ?? 'Patient Name',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 SizedBox(height: 4),
                 Text(
                   widget.patientData?.email ?? 'email@example.com',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
                 SizedBox(height: 16),
                 Row(
@@ -114,9 +119,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
               ],
             ),
           ),
-          
+
           Divider(height: 40),
-          
+
           // Profile Information
           Text(
             'Personal Information',
@@ -127,7 +132,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             ),
           ),
           SizedBox(height: 16),
-          
+
           _buildProfileItem(
             title: 'Full Name',
             value: widget.patientData?.fullName ?? 'Not provided',
@@ -135,7 +140,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             isEditing: _isEditing,
             controller: _nameController,
           ),
-          
+
           _buildProfileItem(
             title: 'Phone Number',
             value: widget.patientData?.phoneNumber ?? 'Not provided',
@@ -143,21 +148,21 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             isEditing: _isEditing,
             controller: _phoneController,
           ),
-          
+
           _buildProfileItem(
             title: 'Date of Birth',
             value: widget.patientData?.dateOfBirth ?? 'Not provided',
             icon: Icons.calendar_today,
             isEditing: false, // DOB cannot be edited here
           ),
-          
+
           _buildProfileItem(
             title: 'Gender',
             value: widget.patientData?.gender ?? 'Not provided',
             icon: Icons.person_outline,
             isEditing: false, // Gender cannot be edited here
           ),
-          
+
           _buildProfileItem(
             title: 'Address',
             value: widget.patientData?.address ?? 'Not provided',
@@ -166,9 +171,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             controller: _addressController,
             maxLines: 3,
           ),
-          
+
           Divider(height: 40),
-          
+
           // Medical Information
           Text(
             'Medical Information',
@@ -179,14 +184,14 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             ),
           ),
           SizedBox(height: 16),
-          
+
           _buildProfileItem(
             title: 'Dosha Type',
             value: widget.patientData?.doshaType ?? 'Not determined yet',
             icon: Icons.spa,
             isEditing: false, // Dosha type is determined by practitioner
           ),
-          
+
           _buildProfileItem(
             title: 'Allergies',
             value: widget.patientData?.allergies ?? 'None',
@@ -195,7 +200,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             controller: _allergiesController,
             maxLines: 3,
           ),
-          
+
           _buildProfileItem(
             title: 'Medical History',
             value: widget.patientData?.medicalHistory ?? 'None',
@@ -204,9 +209,9 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
             controller: _medicalHistoryController,
             maxLines: 5,
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Account Actions
           if (!_isEditing)
             Column(
@@ -231,7 +236,10 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.notifications, color: Colors.green.shade700),
+                  leading: Icon(
+                    Icons.notifications,
+                    color: Colors.green.shade700,
+                  ),
                   title: Text('Notification Settings'),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () {
@@ -247,7 +255,10 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                   },
                 ),
                 ListTile(
-                  leading: Icon(Icons.privacy_tip, color: Colors.green.shade700),
+                  leading: Icon(
+                    Icons.privacy_tip,
+                    color: Colors.green.shade700,
+                  ),
                   title: Text('Privacy Policy'),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () {
@@ -276,7 +287,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
       ),
     );
   }
-  
+
   Widget _buildProfileItem({
     required String title,
     required String value,
@@ -292,10 +303,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
         children: [
           Text(
             title,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
           ),
           SizedBox(height: 8),
           isEditing && controller != null
@@ -318,12 +326,7 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
                     Icon(icon, color: Colors.green.shade700, size: 20),
                     SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        value,
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
-                      ),
+                      child: Text(value, style: TextStyle(fontSize: 16)),
                     ),
                   ],
                 ),
@@ -331,13 +334,13 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
       ),
     );
   }
-  
+
   void _saveProfile() {
     // Implement save functionality with the auth service
     setState(() {
       _isEditing = false;
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Profile updated successfully'),

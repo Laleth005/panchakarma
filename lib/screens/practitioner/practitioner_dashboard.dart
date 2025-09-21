@@ -10,21 +10,20 @@ import 'practitioner_profile_screen.dart';
 
 class PractitionerMainDashboard extends StatefulWidget {
   final String practitionerId;
-  
-  const PractitionerMainDashboard({
-    Key? key,
-    required this.practitionerId,
-  }) : super(key: key);
+
+  const PractitionerMainDashboard({Key? key, required this.practitionerId})
+    : super(key: key);
 
   @override
-  _PractitionerMainDashboardState createState() => _PractitionerMainDashboardState();
+  _PractitionerMainDashboardState createState() =>
+      _PractitionerMainDashboardState();
 }
 
 class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
   int _selectedIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   // Dashboard metrics
   int _totalPatients = 0;
   int _upcomingAppointments = 0;
@@ -82,10 +81,10 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
       }
 
       print('Loading practitioner data for ID: ${widget.practitionerId}');
-      
+
       // Get practitioner data
       await _loadPractitionerData();
-      
+
       // Load all metrics in parallel
       await Future.wait([
         _loadPatientsCount(),
@@ -97,7 +96,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
       setState(() {
         _isLoading = false;
       });
-      
+
       print('Dashboard loading completed');
     } catch (e) {
       print('Error loading dashboard data: $e');
@@ -114,14 +113,17 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
           .doc(widget.practitionerId)
           .get()
           .timeout(Duration(seconds: 10));
-          
+
       if (practitionerDoc.exists) {
-        Map<String, dynamic> data = practitionerDoc.data() as Map<String, dynamic>;
+        Map<String, dynamic> data =
+            practitionerDoc.data() as Map<String, dynamic>;
         data['uid'] = widget.practitionerId;
         setState(() {
           _practitionerData = PractitionerModel.fromJson(data);
         });
-        print('Practitioner data loaded successfully: ${_practitionerData?.fullName}');
+        print(
+          'Practitioner data loaded successfully: ${_practitionerData?.fullName}',
+        );
       } else {
         print('Practitioner document does not exist');
       }
@@ -137,7 +139,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
           .where('practitionerId', isEqualTo: widget.practitionerId)
           .get()
           .timeout(Duration(seconds: 5));
-      
+
       setState(() {
         _totalPatients = patientSnapshot.size;
       });
@@ -154,7 +156,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
     try {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      
+
       // Upcoming appointments (today and future)
       final upcomingSnapshot = await _firestore
           .collection('appointments')
@@ -163,7 +165,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
           .where('status', whereIn: ['scheduled', 'confirmed'])
           .get()
           .timeout(Duration(seconds: 10));
-      
+
       // Completed appointments
       final completedSnapshot = await _firestore
           .collection('appointments')
@@ -186,7 +188,9 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
         _pendingApprovals = pendingSnapshot.size;
       });
 
-      print('Loaded appointments: upcoming=${_upcomingAppointments}, completed=${_completedAppointments}, pending=${_pendingApprovals}');
+      print(
+        'Loaded appointments: upcoming=${_upcomingAppointments}, completed=${_completedAppointments}, pending=${_pendingApprovals}',
+      );
     } catch (e) {
       print('Error loading appointments: $e');
       setState(() {
@@ -204,7 +208,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
           .where('practitionerId', isEqualTo: widget.practitionerId)
           .get()
           .timeout(Duration(seconds: 5));
-      
+
       setState(() {
         _totalConsultations = consultationSnapshot.size;
       });
@@ -296,8 +300,14 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: Colors.white,
         elevation: 0,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-        unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+        selectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 12,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontWeight: FontWeight.w500,
+          fontSize: 11,
+        ),
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_outlined),

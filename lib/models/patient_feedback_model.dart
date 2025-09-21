@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum FeedbackType {
-  general,
-  therapySpecific,
-  patientReport,
-  systemFeedback
-}
+enum FeedbackType { general, therapySpecific, patientReport, systemFeedback }
 
 class PatientFeedbackModel {
   final String id;
@@ -72,7 +67,9 @@ class PatientFeedbackModel {
       'type': type.toString().split('.').last,
       'isAcknowledged': isAcknowledged,
       'practitionerResponse': practitionerResponse,
-      'respondedAt': respondedAt != null ? Timestamp.fromDate(respondedAt!) : null,
+      'respondedAt': respondedAt != null
+          ? Timestamp.fromDate(respondedAt!)
+          : null,
     };
   }
 

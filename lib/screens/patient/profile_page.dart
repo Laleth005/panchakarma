@@ -6,7 +6,7 @@ import '../auth/login_screen_new.dart';
 
 class ProfilePage extends StatefulWidget {
   final String? patientId;
-  
+
   const ProfilePage({Key? key, this.patientId}) : super(key: key);
 
   @override
@@ -28,43 +28,43 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadPatientData() async {
     try {
       print("ProfilePage: Loading patient data");
-      
+
       // Priority 1: Use provided patientId from widget
       if (widget.patientId != null) {
         print("ProfilePage: Using provided patientId: ${widget.patientId}");
-        
+
         try {
           final patientDoc = await FirebaseFirestore.instance
               .collection('patients')
               .doc(widget.patientId)
               .get();
-          
+
           if (patientDoc.exists) {
             print("ProfilePage: Found patient doc using patientId");
             final data = patientDoc.data()!;
             data['uid'] = widget.patientId;
-            
+
             // Ensure role is in the data
             if (!data.containsKey('role')) {
               data['role'] = 'patient';
             }
-            
+
             // Create patient model with safe handling of timestamps
             DateTime createdAt = DateTime.now();
             DateTime updatedAt = DateTime.now();
-            
+
             if (data.containsKey('createdAt') && data['createdAt'] != null) {
               if (data['createdAt'] is Timestamp) {
                 createdAt = (data['createdAt'] as Timestamp).toDate();
               }
             }
-            
+
             if (data.containsKey('updatedAt') && data['updatedAt'] != null) {
               if (data['updatedAt'] is Timestamp) {
                 updatedAt = (data['updatedAt'] as Timestamp).toDate();
               }
             }
-            
+
             final patient = PatientModel(
               uid: widget.patientId!,
               email: data['email'] as String? ?? '',
@@ -82,15 +82,15 @@ class _ProfilePageState extends State<ProfilePage> {
               profileImageUrl: data['profileImageUrl'] as String?,
               primaryPractitionerId: data['primaryPractitionerId'] as String?,
             );
-            
+
             setState(() {
               _patientData = patient;
             });
-            
+
             if (data['doshaType'] != null) {
               await _getDoshaInfo(data['doshaType'] as String);
             }
-            
+
             return; // Successfully loaded patient data, exit early
           }
         } catch (e) {
@@ -98,64 +98,68 @@ class _ProfilePageState extends State<ProfilePage> {
           // Continue to next approach
         }
       }
-      
+
       // Priority 2: Try using AuthService
       final userData = await _authService.getCurrentUserData();
-      
+
       if (userData is PatientModel) {
-        print("ProfilePage: Got patient data from AuthService - ${userData.fullName}");
+        print(
+          "ProfilePage: Got patient data from AuthService - ${userData.fullName}",
+        );
         setState(() {
           _patientData = userData;
         });
-        
+
         // Get dosha information if available
         if (userData.doshaType != null) {
           await _getDoshaInfo(userData.doshaType!);
         }
-        
+
         return; // Successfully loaded patient data, exit early
-      } 
-      
+      }
+
       print("ProfilePage: User data is not a PatientModel - $userData");
-      
+
       // Priority 3: Try getting current user from Firebase Auth
       final firebaseUser = _authService.currentUser;
       if (firebaseUser != null) {
-        print("ProfilePage: Firebase Auth has current user: ${firebaseUser.uid}");
-        
+        print(
+          "ProfilePage: Firebase Auth has current user: ${firebaseUser.uid}",
+        );
+
         // Try to get patient data directly from Firestore
         try {
           final patientDoc = await FirebaseFirestore.instance
               .collection('patients')
               .doc(firebaseUser.uid)
               .get();
-          
+
           if (patientDoc.exists) {
             print("ProfilePage: Found patient doc in Firestore");
             final data = patientDoc.data()!;
             data['uid'] = firebaseUser.uid;
-            
+
             // Ensure role is in the data
             if (!data.containsKey('role')) {
               data['role'] = 'patient';
             }
-            
+
             // Create patient model with safe handling of timestamps
             DateTime createdAt = DateTime.now();
             DateTime updatedAt = DateTime.now();
-            
+
             if (data.containsKey('createdAt') && data['createdAt'] != null) {
               if (data['createdAt'] is Timestamp) {
                 createdAt = (data['createdAt'] as Timestamp).toDate();
               }
             }
-            
+
             if (data.containsKey('updatedAt') && data['updatedAt'] != null) {
               if (data['updatedAt'] is Timestamp) {
                 updatedAt = (data['updatedAt'] as Timestamp).toDate();
               }
             }
-            
+
             final patient = PatientModel(
               uid: firebaseUser.uid,
               email: data['email'] as String? ?? firebaseUser.email ?? '',
@@ -173,17 +177,17 @@ class _ProfilePageState extends State<ProfilePage> {
               profileImageUrl: data['profileImageUrl'] as String?,
               primaryPractitionerId: data['primaryPractitionerId'] as String?,
             );
-            
+
             setState(() {
               _patientData = patient;
             });
-            
+
             if (data['doshaType'] != null) {
               await _getDoshaInfo(data['doshaType'] as String);
             }
           } else {
             print("ProfilePage: No patient doc found");
-            
+
             // Create a basic placeholder patient
             setState(() {
               _patientData = PatientModel(
@@ -216,7 +220,8 @@ class _ProfilePageState extends State<ProfilePage> {
       // For now, hardcoding some dosha information
       final Map<String, dynamic> doshaInfo = {
         'Vata': {
-          'description': 'Vata represents the elements of space and air. It governs movement and is responsible for basic body processes such as breathing, cell division, and circulation.',
+          'description':
+              'Vata represents the elements of space and air. It governs movement and is responsible for basic body processes such as breathing, cell division, and circulation.',
           'characteristics': [
             'Thin, light frame',
             'Quick mind, creative',
@@ -231,10 +236,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Meditation and calming activities',
             'Regular oil massage',
             'Early bedtime',
-          ]
+          ],
         },
         'Pitta': {
-          'description': 'Pitta represents the elements of fire and water. It governs metabolism and transformation in the body and mind.',
+          'description':
+              'Pitta represents the elements of fire and water. It governs metabolism and transformation in the body and mind.',
           'characteristics': [
             'Medium build with good muscle development',
             'Sharp intellect, good concentration',
@@ -249,10 +255,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Regular exercise that\'s not too intense',
             'Cooling activities in nature',
             'Maintaining a relaxed attitude',
-          ]
+          ],
         },
         'Kapha': {
-          'description': 'Kapha represents the elements of earth and water. It provides structure and lubrication to the body and is responsible for strength and immunity.',
+          'description':
+              'Kapha represents the elements of earth and water. It provides structure and lubrication to the body and is responsible for strength and immunity.',
           'characteristics': [
             'Solid, strong build',
             'Calm, steady nature',
@@ -267,10 +274,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Variation and stimulation in routine',
             'Dry massage',
             'Rising early',
-          ]
+          ],
         },
         'Vata-Pitta': {
-          'description': 'A combination of Vata and Pitta doshas, with characteristics of both air/space and fire elements.',
+          'description':
+              'A combination of Vata and Pitta doshas, with characteristics of both air/space and fire elements.',
           'characteristics': [
             'Light to medium frame',
             'Quick, sharp intellect',
@@ -284,10 +292,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Moderate exercise',
             'Balance between creative and analytical activities',
             'Regular self-care',
-          ]
+          ],
         },
         'Pitta-Kapha': {
-          'description': 'A combination of Pitta and Kapha doshas, combining fire/water with earth/water elements.',
+          'description':
+              'A combination of Pitta and Kapha doshas, combining fire/water with earth/water elements.',
           'characteristics': [
             'Medium to solid build',
             'Strong intellect with steadiness',
@@ -301,10 +310,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Balance between rest and activity',
             'Cooling activities for Pitta, stimulating for Kapha',
             'Finding middle ground in self-care practices',
-          ]
+          ],
         },
         'Vata-Kapha': {
-          'description': 'A combination of Vata and Kapha doshas, combining air/space with earth/water elements.',
+          'description':
+              'A combination of Vata and Kapha doshas, combining air/space with earth/water elements.',
           'characteristics': [
             'Variable build - can be thin or solid',
             'Combination of quick thoughts and steady emotions',
@@ -318,10 +328,11 @@ class _ProfilePageState extends State<ProfilePage> {
             'Stimulating yet grounding activities',
             'Finding balance between movement and stability',
             'Consistent routine with some variation',
-          ]
+          ],
         },
         'Tri-Dosha': {
-          'description': 'A relatively equal balance of all three doshas - Vata, Pitta, and Kapha.',
+          'description':
+              'A relatively equal balance of all three doshas - Vata, Pitta, and Kapha.',
           'characteristics': [
             'Balanced physical build',
             'Adaptable mind and body',
@@ -335,8 +346,8 @@ class _ProfilePageState extends State<ProfilePage> {
             'Balanced diet with seasonal variations',
             'Addressing specific imbalances as they arise',
             'Regular but flexible routine',
-          ]
-        }
+          ],
+        },
       };
 
       setState(() {
@@ -377,10 +388,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: Text(
           'My Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF2E7D32),
         elevation: 0,
@@ -439,16 +447,13 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 16),
             Text(
               "Patient",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ],
         ),
       );
     }
-    
+
     return Center(
       child: Column(
         children: [
@@ -464,8 +469,10 @@ class _ProfilePageState extends State<ProfilePage> {
                       height: 120,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) => Text(
-                        _patientData!.fullName.isNotEmpty 
-                            ? _patientData!.fullName.substring(0, 1).toUpperCase()
+                        _patientData!.fullName.isNotEmpty
+                            ? _patientData!.fullName
+                                  .substring(0, 1)
+                                  .toUpperCase()
                             : "P",
                         style: TextStyle(
                           fontSize: 48,
@@ -476,7 +483,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   )
                 : Text(
-                    _patientData!.fullName.isNotEmpty 
+                    _patientData!.fullName.isNotEmpty
                         ? _patientData!.fullName.substring(0, 1).toUpperCase()
                         : "P",
                     style: TextStyle(
@@ -489,18 +496,12 @@ class _ProfilePageState extends State<ProfilePage> {
           SizedBox(height: 16),
           Text(
             _patientData?.fullName ?? "Patient",
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           SizedBox(height: 4),
           Text(
             _patientData?.email ?? "No email available",
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
           ),
           if (_patientData?.doshaType != null)
             Padding(
@@ -527,9 +528,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (_patientData == null) {
       return Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -550,12 +549,10 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       );
     }
-    
+
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -572,7 +569,10 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 16),
             _buildInfoRow('Phone', _patientData?.phoneNumber ?? 'Not provided'),
             _buildInfoRow('Gender', _patientData?.gender ?? 'Not provided'),
-            _buildInfoRow('Date of Birth', _patientData?.dateOfBirth ?? 'Not provided'),
+            _buildInfoRow(
+              'Date of Birth',
+              _patientData?.dateOfBirth ?? 'Not provided',
+            ),
             _buildInfoRow('Address', _patientData?.address ?? 'Not provided'),
           ],
         ),
@@ -583,9 +583,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildDoshaInfoCard() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -624,32 +622,30 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 8),
-            ...(_doshaInfo!['characteristics'] as List).map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.circle,
-                      size: 8,
-                      color: Color(0xFF2E7D32),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[800],
-                          height: 1.4,
+            ...(_doshaInfo!['characteristics'] as List)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.circle, size: 8, color: Color(0xFF2E7D32)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[800],
+                              height: 1.4,
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ).toList(),
+                  ),
+                )
+                .toList(),
             SizedBox(height: 16),
             Text(
               'Balancing Practices',
@@ -660,32 +656,34 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 8),
-            ...(_doshaInfo!['balancingPractices'] as List).map(
-              (item) => Padding(
-                padding: const EdgeInsets.only(bottom: 4.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(
-                      Icons.check_circle,
-                      size: 16,
-                      color: Color(0xFF2E7D32),
-                    ),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[800],
-                          height: 1.4,
+            ...(_doshaInfo!['balancingPractices'] as List)
+                .map(
+                  (item) => Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.check_circle,
+                          size: 16,
+                          color: Color(0xFF2E7D32),
                         ),
-                      ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            item,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[800],
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ).toList(),
+                  ),
+                )
+                .toList(),
           ],
         ),
       ),
@@ -695,9 +693,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildSettingsCard() {
     return Card(
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -712,13 +708,9 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             SizedBox(height: 16),
-            _buildSettingsTile(
-              'Change Password',
-              Icons.lock_outline,
-              () {
-                // Navigate to change password screen
-              },
-            ),
+            _buildSettingsTile('Change Password', Icons.lock_outline, () {
+              // Navigate to change password screen
+            }),
             Divider(),
             _buildSettingsTile(
               'Notification Preferences',
@@ -744,14 +736,9 @@ class _ProfilePageState extends State<ProfilePage> {
               },
             ),
             Divider(),
-            _buildSettingsTile(
-              'Delete Account',
-              Icons.delete_outline,
-              () {
-                // Show delete account confirmation
-              },
-              color: Colors.red,
-            ),
+            _buildSettingsTile('Delete Account', Icons.delete_outline, () {
+              // Show delete account confirmation
+            }, color: Colors.red),
           ],
         ),
       ),
@@ -778,10 +765,7 @@ class _ProfilePageState extends State<ProfilePage> {
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[800],
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey[800]),
             ),
           ),
         ],
@@ -789,7 +773,12 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildSettingsTile(String title, IconData icon, VoidCallback onTap, {Color? color}) {
+  Widget _buildSettingsTile(
+    String title,
+    IconData icon,
+    VoidCallback onTap, {
+    Color? color,
+  }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
@@ -797,25 +786,14 @@ class _ProfilePageState extends State<ProfilePage> {
         padding: const EdgeInsets.symmetric(vertical: 12.0),
         child: Row(
           children: [
-            Icon(
-              icon,
-              color: color ?? Colors.grey[700],
-              size: 20,
-            ),
+            Icon(icon, color: color ?? Colors.grey[700], size: 20),
             SizedBox(width: 16),
             Text(
               title,
-              style: TextStyle(
-                fontSize: 16,
-                color: color ?? Colors.grey[800],
-              ),
+              style: TextStyle(fontSize: 16, color: color ?? Colors.grey[800]),
             ),
             Spacer(),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[400],
-              size: 16,
-            ),
+            Icon(Icons.arrow_forward_ios, color: Colors.grey[400], size: 16),
           ],
         ),
       ),

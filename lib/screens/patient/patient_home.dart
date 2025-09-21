@@ -12,7 +12,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   final List<Map<String, dynamic>> _panchakarmaInfo = [
     {
       'title': 'Vamana',
-      'description': 'A therapeutic emesis that removes excess Kapha dosha from the body.',
+      'description':
+          'A therapeutic emesis that removes excess Kapha dosha from the body.',
       'image': 'assets/images/vamana.jpg',
       'benefits': [
         'Helps in respiratory disorders',
@@ -23,7 +24,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     },
     {
       'title': 'Virechana',
-      'description': 'A therapeutic purgation that eliminates excess Pitta dosha from the body.',
+      'description':
+          'A therapeutic purgation that eliminates excess Pitta dosha from the body.',
       'image': 'assets/images/virechana.jpg',
       'benefits': [
         'Helps in digestive disorders',
@@ -34,7 +36,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     },
     {
       'title': 'Basti',
-      'description': 'A therapeutic enema that balances Vata dosha and supports overall health.',
+      'description':
+          'A therapeutic enema that balances Vata dosha and supports overall health.',
       'image': 'assets/images/basti.jpg',
       'benefits': [
         'Relieves joint pain',
@@ -45,7 +48,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     },
     {
       'title': 'Nasya',
-      'description': 'Administration of herbal oils through the nasal passage to treat disorders of the head.',
+      'description':
+          'Administration of herbal oils through the nasal passage to treat disorders of the head.',
       'image': 'assets/images/nasya.jpg',
       'benefits': [
         'Clears sinus congestion',
@@ -56,7 +60,8 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     },
     {
       'title': 'Raktamokshana',
-      'description': 'A therapeutic bloodletting that purifies the blood and removes toxins.',
+      'description':
+          'A therapeutic bloodletting that purifies the blood and removes toxins.',
       'image': 'assets/images/raktamokshana.jpg',
       'benefits': [
         'Helps in skin diseases',
@@ -66,17 +71,19 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
       ],
     },
   ];
-  
+
   final List<Map<String, dynamic>> _recentUpdates = [
     {
       'title': 'New Practitioner Added',
-      'description': 'Dr. Sharma, a specialist in Panchakarma, has joined our team.',
+      'description':
+          'Dr. Sharma, a specialist in Panchakarma, has joined our team.',
       'date': '2 days ago',
       'icon': Icons.person_add,
     },
     {
       'title': 'Ayurveda Workshop',
-      'description': 'Join our weekend workshop on understanding your body constitution.',
+      'description':
+          'Join our weekend workshop on understanding your body constitution.',
       'date': '1 week ago',
       'icon': Icons.event,
     },
@@ -114,17 +121,14 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 SizedBox(height: 8),
                 Text(
                   'Your journey to holistic wellness begins here',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey.shade700,
-                  ),
+                  style: TextStyle(fontSize: 16, color: Colors.grey.shade700),
                 ),
               ],
             ),
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Quick Actions
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -178,9 +182,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               ],
             ),
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Upcoming Appointment
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -342,9 +346,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                             SizedBox(height: 8),
                             Text(
                               'No upcoming appointments',
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                              ),
+                              style: TextStyle(color: Colors.grey.shade600),
                             ),
                             SizedBox(height: 16),
                             ElevatedButton(
@@ -365,9 +367,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               ),
             ),
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Panchakarma Treatments Carousel
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -384,9 +386,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                 ),
                 Text(
                   '${_currentCarouselIndex + 1}/${_panchakarmaInfo.length}',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -409,9 +409,9 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               return _buildPanchakarmaCard(info);
             },
           ),
-          
+
           SizedBox(height: 24),
-          
+
           // Recent Updates
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
@@ -445,10 +445,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                       color: Colors.green.shade100,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      update['icon'],
-                      color: Colors.green.shade700,
-                    ),
+                    child: Icon(update['icon'], color: Colors.green.shade700),
                   ),
                   title: Text(
                     update['title'],
@@ -478,7 +475,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               );
             },
           ),
-          
+
           SizedBox(height: 16),
         ],
       ),
@@ -494,9 +491,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
     return Card(
       elevation: 2,
       margin: EdgeInsets.symmetric(horizontal: 8),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -512,19 +507,12 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                   color: color.withOpacity(0.1),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(
-                  icon,
-                  size: 28,
-                  color: color,
-                ),
+                child: Icon(icon, size: 28, color: color),
               ),
               SizedBox(height: 8),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -537,9 +525,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
   Widget _buildPanchakarmaCard(Map<String, dynamic> info) {
     return Card(
       elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -548,9 +534,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
             height: 160,
             decoration: BoxDecoration(
               color: Colors.green.shade200,
-              borderRadius: BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
               image: DecorationImage(
                 image: AssetImage('assets/images/placeholder.jpg'),
                 fit: BoxFit.cover,
@@ -584,10 +568,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
               children: [
                 Text(
                   info['description'],
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: Colors.grey.shade700,
-                  ),
+                  style: TextStyle(fontSize: 15, color: Colors.grey.shade700),
                 ),
                 SizedBox(height: 16),
                 Text(
@@ -612,9 +593,7 @@ class _PatientHomeScreenState extends State<PatientHomeScreen> {
                           size: 16,
                         ),
                         SizedBox(width: 8),
-                        Expanded(
-                          child: Text(info['benefits'][index]),
-                        ),
+                        Expanded(child: Text(info['benefits'][index])),
                       ],
                     ),
                   ),

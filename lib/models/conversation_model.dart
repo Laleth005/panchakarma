@@ -8,8 +8,9 @@ class ConversationModel {
   final String lastMessageContent;
   final DateTime lastMessageTimestamp;
   final String lastMessageSenderId;
-  final Map<String, bool> unreadStatus; // Map of userId to whether they have unread messages
-  
+  final Map<String, bool>
+  unreadStatus; // Map of userId to whether they have unread messages
+
   ConversationModel({
     required this.id,
     required this.participantIds,
@@ -20,33 +21,39 @@ class ConversationModel {
     required this.lastMessageSenderId,
     required this.unreadStatus,
   });
-  
+
   factory ConversationModel.fromJson(Map<String, dynamic> json, String docId) {
     // Convert the dynamic Maps from Firestore to the required types
     Map<String, String> names = {};
     if (json['participantNames'] != null) {
-      final Map<String, dynamic> rawNames = Map<String, dynamic>.from(json['participantNames']);
+      final Map<String, dynamic> rawNames = Map<String, dynamic>.from(
+        json['participantNames'],
+      );
       rawNames.forEach((key, value) {
         names[key] = value.toString();
       });
     }
-    
+
     Map<String, String> roles = {};
     if (json['participantRoles'] != null) {
-      final Map<String, dynamic> rawRoles = Map<String, dynamic>.from(json['participantRoles']);
+      final Map<String, dynamic> rawRoles = Map<String, dynamic>.from(
+        json['participantRoles'],
+      );
       rawRoles.forEach((key, value) {
         roles[key] = value.toString();
       });
     }
-    
+
     Map<String, bool> unread = {};
     if (json['unreadStatus'] != null) {
-      final Map<String, dynamic> rawUnread = Map<String, dynamic>.from(json['unreadStatus']);
+      final Map<String, dynamic> rawUnread = Map<String, dynamic>.from(
+        json['unreadStatus'],
+      );
       rawUnread.forEach((key, value) {
         unread[key] = value as bool;
       });
     }
-    
+
     return ConversationModel(
       id: docId,
       participantIds: List<String>.from(json['participantIds']),
@@ -56,13 +63,13 @@ class ConversationModel {
       lastMessageTimestamp: (json['lastMessageTimestamp'] is Timestamp)
           ? (json['lastMessageTimestamp'] as Timestamp).toDate()
           : (json['lastMessageTimestamp'] != null)
-              ? DateTime.parse(json['lastMessageTimestamp'].toString())
-              : DateTime.now(),
+          ? DateTime.parse(json['lastMessageTimestamp'].toString())
+          : DateTime.now(),
       lastMessageSenderId: json['lastMessageSenderId'] as String? ?? '',
       unreadStatus: unread,
     );
   }
-  
+
   Map<String, dynamic> toJson() {
     return {
       'participantIds': participantIds,
@@ -74,27 +81,27 @@ class ConversationModel {
       'unreadStatus': unreadStatus,
     };
   }
-  
+
   // Helper method to get participant name that is not the current user
   String getOtherParticipantName(String currentUserId) {
     if (participantIds.length <= 1) {
       return 'Unknown';
     }
-    
+
     for (final id in participantIds) {
       if (id != currentUserId) {
         return participantNames[id] ?? 'Unknown User';
       }
     }
-    
+
     return 'Unknown User';
   }
-  
+
   // Helper method to check if the conversation has unread messages for a user
   bool hasUnreadMessages(String userId) {
     return unreadStatus[userId] ?? false;
   }
-  
+
   // Create a copy with updated fields
   ConversationModel copyWith({
     String? id,

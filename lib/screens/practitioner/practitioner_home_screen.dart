@@ -4,10 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class PractitionerHomeScreen extends StatefulWidget {
   final String practitionerId;
 
-  const PractitionerHomeScreen({
-    Key? key,
-    required this.practitionerId,
-  }) : super(key: key);
+  const PractitionerHomeScreen({Key? key, required this.practitionerId})
+    : super(key: key);
 
   @override
   _PractitionerHomeScreenState createState() => _PractitionerHomeScreenState();
@@ -177,11 +175,7 @@ class _PractitionerHomeScreenState extends State<PractitionerHomeScreen> {
                 ),
               ],
             ),
-            child: Icon(
-              Icons.spa,
-              color: Colors.white,
-              size: 30,
-            ),
+            child: Icon(Icons.spa, color: Colors.white, size: 30),
           ),
           SizedBox(width: 16),
           Expanded(
@@ -275,11 +269,7 @@ class _PractitionerHomeScreenState extends State<PractitionerHomeScreen> {
               color: Colors.white.withOpacity(0.2),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              Icons.local_hospital,
-              color: Colors.white,
-              size: 32,
-            ),
+            child: Icon(Icons.local_hospital, color: Colors.white, size: 32),
           ),
         ],
       ),
@@ -428,7 +418,12 @@ class _PractitionerHomeScreenState extends State<PractitionerHomeScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(

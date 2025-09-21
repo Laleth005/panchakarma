@@ -8,7 +8,7 @@ class ConversationScreen extends StatefulWidget {
   final String conversationId;
   final String practitionerId;
   final String recipientName;
-  
+
   const ConversationScreen({
     required this.conversationId,
     required this.practitionerId,
@@ -31,7 +31,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
   bool _isSending = false;
   String? _errorMessage;
   List<MessageModel> _messages = [];
-  
+
   Stream<QuerySnapshot>? _messagesStream;
 
   @override
@@ -58,12 +58,12 @@ class _ConversationScreenState extends State<ConversationScreen> {
       DocumentReference conversationRef = _firestore
           .collection('conversations')
           .doc(widget.conversationId);
-      
+
       // Update the unread status for this practitioner
       await conversationRef.update({
-        'unreadStatus.${widget.practitionerId}': false
+        'unreadStatus.${widget.practitionerId}': false,
       });
-      
+
       // Mark all messages from other participants as read
       QuerySnapshot messagesSnapshot = await _firestore
           .collection('conversations')
@@ -72,13 +72,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
           .where('senderId', isNotEqualTo: widget.practitionerId)
           .where('isRead', isEqualTo: false)
           .get();
-      
+
       WriteBatch batch = _firestore.batch();
-      
+
       for (var doc in messagesSnapshot.docs) {
         batch.update(doc.reference, {'isRead': true});
       }
-      
+
       await batch.commit();
     } catch (e) {
       print('Error marking conversation as read: $e');
@@ -87,36 +87,37 @@ class _ConversationScreenState extends State<ConversationScreen> {
 
   Future<void> _sendMessage() async {
     final messageText = _messageController.text.trim();
-    
+
     if (messageText.isEmpty) return;
-    
+
     setState(() {
       _isSending = true;
     });
-    
+
     try {
       // Get user details for the sender info
       final User? currentUser = _auth.currentUser;
       String senderName = 'Unknown Practitioner';
-      
+
       // Get practitioner's name from Firestore
       DocumentSnapshot practitionerDoc = await _firestore
           .collection('practitioners')
           .doc(widget.practitionerId)
           .get();
-          
+
       if (practitionerDoc.exists) {
-        Map<String, dynamic> data = practitionerDoc.data() as Map<String, dynamic>;
+        Map<String, dynamic> data =
+            practitionerDoc.data() as Map<String, dynamic>;
         senderName = data['fullName'] as String? ?? 'Unknown Practitioner';
       }
-      
+
       // Create a new message document
       DocumentReference messageRef = _firestore
           .collection('conversations')
           .doc(widget.conversationId)
           .collection('messages')
           .doc();
-          
+
       MessageModel newMessage = MessageModel(
         id: messageRef.id,
         senderId: widget.practitionerId,
@@ -126,38 +127,45 @@ class _ConversationScreenState extends State<ConversationScreen> {
         timestamp: DateTime.now(),
         isRead: false,
       );
-      
+
       // Add the new message to Firestore
       await messageRef.set(newMessage.toJson());
-      
+
       // Update the conversation with the latest message
-      await _firestore.collection('conversations').doc(widget.conversationId).update({
-        'lastMessageContent': messageText,
-        'lastMessageTimestamp': FieldValue.serverTimestamp(),
-        'lastMessageSenderId': widget.practitionerId,
-      });
-      
+      await _firestore
+          .collection('conversations')
+          .doc(widget.conversationId)
+          .update({
+            'lastMessageContent': messageText,
+            'lastMessageTimestamp': FieldValue.serverTimestamp(),
+            'lastMessageSenderId': widget.practitionerId,
+          });
+
       // Update unread status for all participants except the sender
       DocumentSnapshot conversationDoc = await _firestore
           .collection('conversations')
           .doc(widget.conversationId)
           .get();
-          
+
       if (conversationDoc.exists) {
-        Map<String, dynamic> data = conversationDoc.data() as Map<String, dynamic>;
-        List<String> participantIds = List<String>.from(data['participantIds'] ?? []);
-        
+        Map<String, dynamic> data =
+            conversationDoc.data() as Map<String, dynamic>;
+        List<String> participantIds = List<String>.from(
+          data['participantIds'] ?? [],
+        );
+
         Map<String, bool> unreadStatus = {};
         for (String id in participantIds) {
           // Set unread true for everyone except the sender
           unreadStatus[id] = id != widget.practitionerId;
         }
-        
-        await _firestore.collection('conversations').doc(widget.conversationId).update({
-          'unreadStatus': unreadStatus,
-        });
+
+        await _firestore
+            .collection('conversations')
+            .doc(widget.conversationId)
+            .update({'unreadStatus': unreadStatus});
       }
-      
+
       // Clear the text field
       _messageController.clear();
     } catch (e) {
@@ -196,14 +204,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: _messagesStream,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting && _isInitialLoad) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    _isInitialLoad) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
                 if (snapshot.hasError) {
-                  return Center(
-                    child: Text('Error: ${snapshot.error}'),
-                  );
+                  return Center(child: Text('Error: ${snapshot.error}'));
                 }
 
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -218,10 +225,15 @@ class _ConversationScreenState extends State<ConversationScreen> {
                   });
                 }
 
-                final messages = snapshot.data!.docs.map((doc) => 
-                  MessageModel.fromJson(doc.data() as Map<String, dynamic>, doc.id)
-                ).toList();
-                
+                final messages = snapshot.data!.docs
+                    .map(
+                      (doc) => MessageModel.fromJson(
+                        doc.data() as Map<String, dynamic>,
+                        doc.id,
+                      ),
+                    )
+                    .toList();
+
                 return ListView.builder(
                   controller: _scrollController,
                   reverse: true,
@@ -233,7 +245,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
               },
             ),
           ),
-          
+
           // Error message if any
           if (_errorMessage != null)
             Padding(
@@ -243,7 +255,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
                 style: const TextStyle(color: Colors.red),
               ),
             ),
-          
+
           // Message input field
           _buildMessageInput(),
         ],
@@ -254,11 +266,13 @@ class _ConversationScreenState extends State<ConversationScreen> {
   Widget _buildMessageBubble(MessageModel message) {
     final bool isMe = message.senderId == widget.practitionerId;
     final time = DateFormat.jm().format(message.timestamp);
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
       child: Row(
-        mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
@@ -274,15 +288,20 @@ class _ConversationScreenState extends State<ConversationScreen> {
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16.0,
+                vertical: 10.0,
+              ),
               decoration: BoxDecoration(
-                color: isMe 
+                color: isMe
                     ? Theme.of(context).colorScheme.primary.withOpacity(0.9)
                     : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(20.0),
               ),
               child: Column(
-                crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                crossAxisAlignment: isMe
+                    ? CrossAxisAlignment.end
+                    : CrossAxisAlignment.start,
                 children: [
                   Text(
                     message.content,
@@ -406,7 +425,9 @@ class _ConversationScreenState extends State<ConversationScreen> {
               Navigator.of(context).pop();
               // Placeholder for navigating to patient details
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('View full profile feature coming soon')),
+                const SnackBar(
+                  content: Text('View full profile feature coming soon'),
+                ),
               );
             },
             child: const Text('View Full Profile'),
@@ -415,7 +436,7 @@ class _ConversationScreenState extends State<ConversationScreen> {
       ),
     );
   }
-  
+
   @override
   void dispose() {
     _messageController.dispose();

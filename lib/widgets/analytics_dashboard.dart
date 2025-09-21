@@ -4,11 +4,9 @@ import 'package:fl_chart/fl_chart.dart';
 
 class AnalyticsDashboard extends StatefulWidget {
   final String practitionerId;
-  
-  const AnalyticsDashboard({
-    Key? key,
-    required this.practitionerId,
-  }) : super(key: key);
+
+  const AnalyticsDashboard({Key? key, required this.practitionerId})
+    : super(key: key);
 
   @override
   _AnalyticsDashboardState createState() => _AnalyticsDashboardState();
@@ -18,28 +16,30 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
   final PractitionerRepository _repository = PractitionerRepository();
   bool _isLoading = true;
   bool _hasError = false;
-  
+
   // Analytics data
   int _patientsToday = 0;
   int _patientsWeek = 0;
   double _satisfactionScore = 0.0;
   double _completionRate = 0.0;
-  
+
   @override
   void initState() {
     super.initState();
     _loadAnalytics();
   }
-  
+
   Future<void> _loadAnalytics() async {
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
-      final data = await _repository.getPractitionerAnalytics(widget.practitionerId);
-      
+      final data = await _repository.getPractitionerAnalytics(
+        widget.practitionerId,
+      );
+
       setState(() {
         _patientsToday = data['patientsToday'] ?? 0;
         _patientsWeek = data['patientsWeek'] ?? 0;
@@ -106,16 +106,17 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Error loading analytics',
                       style: TextStyle(color: Colors.red.shade700),
                     ),
-                    TextButton(
-                      onPressed: _loadAnalytics,
-                      child: Text('Retry'),
-                    ),
+                    TextButton(onPressed: _loadAnalytics, child: Text('Retry')),
                   ],
                 ),
               ),
@@ -127,38 +128,46 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _buildAnalyticsCard(
-                        'Patients Today',
-                        _patientsToday.toString(),
-                        Icons.people,
-                        Colors.blue.shade700,
-                      )),
+                      Expanded(
+                        child: _buildAnalyticsCard(
+                          'Patients Today',
+                          _patientsToday.toString(),
+                          Icons.people,
+                          Colors.blue.shade700,
+                        ),
+                      ),
                       SizedBox(width: 12),
-                      Expanded(child: _buildAnalyticsCard(
-                        'This Week',
-                        _patientsWeek.toString(),
-                        Icons.calendar_today,
-                        Colors.purple.shade700,
-                      )),
+                      Expanded(
+                        child: _buildAnalyticsCard(
+                          'This Week',
+                          _patientsWeek.toString(),
+                          Icons.calendar_today,
+                          Colors.purple.shade700,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 16),
                   Row(
                     children: [
-                      Expanded(child: _buildRatingCard(
-                        'Satisfaction Score',
-                        _satisfactionScore,
-                        5.0,
-                        Icons.star,
-                        Colors.amber.shade700,
-                      )),
+                      Expanded(
+                        child: _buildRatingCard(
+                          'Satisfaction Score',
+                          _satisfactionScore,
+                          5.0,
+                          Icons.star,
+                          Colors.amber.shade700,
+                        ),
+                      ),
                       SizedBox(width: 12),
-                      Expanded(child: _buildProgressCard(
-                        'Completion Rate',
-                        _completionRate,
-                        Icons.check_circle_outline,
-                        Colors.green.shade700,
-                      )),
+                      Expanded(
+                        child: _buildProgressCard(
+                          'Completion Rate',
+                          _completionRate,
+                          Icons.check_circle_outline,
+                          Colors.green.shade700,
+                        ),
+                      ),
                     ],
                   ),
                   SizedBox(height: 24),
@@ -170,8 +179,13 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
       ),
     );
   }
-  
-  Widget _buildAnalyticsCard(String title, String value, IconData icon, Color color) {
+
+  Widget _buildAnalyticsCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -209,8 +223,14 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
       ),
     );
   }
-  
-  Widget _buildRatingCard(String title, double value, double maxValue, IconData icon, Color color) {
+
+  Widget _buildRatingCard(
+    String title,
+    double value,
+    double maxValue,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -249,30 +269,37 @@ class _AnalyticsDashboardState extends State<AnalyticsDashboard> {
               SizedBox(width: 8),
               Text(
                 '/ ${maxValue.toInt()}',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.grey),
               ),
             ],
           ),
           SizedBox(height: 4),
           Row(
-            children: List.generate(maxValue.toInt(), (index) => Padding(
-              padding: const EdgeInsets.only(right: 2.0),
-              child: Icon(
-                index < value.floor() ? Icons.star : (index < value ? Icons.star_half : Icons.star_border),
-                color: color,
-                size: 16,
+            children: List.generate(
+              maxValue.toInt(),
+              (index) => Padding(
+                padding: const EdgeInsets.only(right: 2.0),
+                child: Icon(
+                  index < value.floor()
+                      ? Icons.star
+                      : (index < value ? Icons.star_half : Icons.star_border),
+                  color: color,
+                  size: 16,
+                ),
               ),
-            )),
+            ),
           ),
         ],
       ),
     );
   }
-  
-  Widget _buildProgressCard(String title, double percentage, IconData icon, Color color) {
+
+  Widget _buildProgressCard(
+    String title,
+    double percentage,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(

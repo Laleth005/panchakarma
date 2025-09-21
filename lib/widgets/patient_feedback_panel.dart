@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class PatientFeedbackPanel extends StatefulWidget {
   final String practitionerId;
   final Function(PatientFeedbackModel) onRespondToFeedback;
-  
+
   const PatientFeedbackPanel({
     Key? key,
     required this.practitionerId,
@@ -34,9 +34,11 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
-      final feedbacks = await _repository.getPendingFeedback(widget.practitionerId);
+      final feedbacks = await _repository.getPendingFeedback(
+        widget.practitionerId,
+      );
       setState(() {
         _feedbacks = feedbacks;
         _isLoading = false;
@@ -49,9 +51,15 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
     }
   }
 
-  Future<void> _acknowledgeFeedback(PatientFeedbackModel feedback, [String? response]) async {
-    final success = await _repository.acknowledgeFeedback(feedback.id, response);
-    
+  Future<void> _acknowledgeFeedback(
+    PatientFeedbackModel feedback, [
+    String? response,
+  ]) async {
+    final success = await _repository.acknowledgeFeedback(
+      feedback.id,
+      response,
+    );
+
     if (success) {
       setState(() {
         _feedbacks.removeWhere((f) => f.id == feedback.id);
@@ -110,16 +118,17 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Error loading feedback',
                       style: TextStyle(color: Colors.red.shade700),
                     ),
-                    TextButton(
-                      onPressed: _loadFeedback,
-                      child: Text('Retry'),
-                    ),
+                    TextButton(onPressed: _loadFeedback, child: Text('Retry')),
                   ],
                 ),
               ),
@@ -130,7 +139,11 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.check_circle_outline, size: 48, color: Colors.green.shade300),
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 48,
+                      color: Colors.green.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'No pending feedback',
@@ -188,11 +201,16 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
                 ),
               ),
               Row(
-                children: List.generate(5, (i) => Icon(
-                  i < feedback.rating ? Icons.star : Icons.star_border,
-                  color: i < feedback.rating ? Colors.amber : Colors.grey.shade400,
-                  size: 20,
-                )),
+                children: List.generate(
+                  5,
+                  (i) => Icon(
+                    i < feedback.rating ? Icons.star : Icons.star_border,
+                    color: i < feedback.rating
+                        ? Colors.amber
+                        : Colors.grey.shade400,
+                    size: 20,
+                  ),
+                ),
               ),
             ],
           ),
@@ -206,19 +224,13 @@ class _PatientFeedbackPanelState extends State<PatientFeedbackPanel> {
               ),
               child: Text(
                 feedback.therapyType!,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.blue.shade700,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.blue.shade700),
               ),
             ),
           SizedBox(height: 8),
           Text(
             feedback.feedback,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade800,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade800),
           ),
           SizedBox(height: 12),
           Row(

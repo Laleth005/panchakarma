@@ -6,23 +6,29 @@ import '../../models/treatment_record_model.dart';
 
 class PatientProgressReportScreen extends StatefulWidget {
   final String patientId;
-  
-  const PatientProgressReportScreen({
-    Key? key,
-    required this.patientId,
-  }) : super(key: key);
+
+  const PatientProgressReportScreen({Key? key, required this.patientId})
+    : super(key: key);
 
   @override
-  _PatientProgressReportScreenState createState() => _PatientProgressReportScreenState();
+  _PatientProgressReportScreenState createState() =>
+      _PatientProgressReportScreenState();
 }
 
-class _PatientProgressReportScreenState extends State<PatientProgressReportScreen> {
+class _PatientProgressReportScreenState
+    extends State<PatientProgressReportScreen> {
   PatientModel? _patient;
   bool _isLoading = true;
   List<TreatmentRecordModel> _treatmentRecords = [];
   String _selectedTimeRange = 'Last Month';
-  List<String> _timeRanges = ['Last Week', 'Last Month', 'Last 3 Months', 'Last Year', 'All Time'];
-  
+  List<String> _timeRanges = [
+    'Last Week',
+    'Last Month',
+    'Last 3 Months',
+    'Last Year',
+    'All Time',
+  ];
+
   // For storing analytics data
   Map<String, dynamic> _analytics = {
     'totalSessions': 0,
@@ -45,27 +51,27 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
           .collection('patients')
           .doc(widget.patientId)
           .get();
-          
+
       if (patientDoc.exists) {
         final data = patientDoc.data()!;
         data['uid'] = widget.patientId;
-        
+
         // Handle timestamps
         DateTime createdAt = DateTime.now();
         DateTime updatedAt = DateTime.now();
-        
+
         if (data.containsKey('createdAt') && data['createdAt'] != null) {
           if (data['createdAt'] is Timestamp) {
             createdAt = (data['createdAt'] as Timestamp).toDate();
           }
         }
-        
+
         if (data.containsKey('updatedAt') && data['updatedAt'] != null) {
           if (data['updatedAt'] is Timestamp) {
             updatedAt = (data['updatedAt'] as Timestamp).toDate();
           }
         }
-        
+
         final patient = PatientModel(
           uid: widget.patientId,
           email: data['email'] as String? ?? '',
@@ -83,7 +89,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
           profileImageUrl: data['profileImageUrl'] as String?,
           primaryPractitionerId: data['primaryPractitionerId'] as String?,
         );
-        
+
         setState(() {
           _patient = patient;
         });
@@ -96,7 +102,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       });
     }
   }
-  
+
   Future<void> _loadTreatmentRecords() async {
     try {
       final records = await FirebaseFirestore.instance
@@ -104,33 +110,39 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
           .where('patientId', isEqualTo: widget.patientId)
           .orderBy('treatmentDate', descending: true)
           .get();
-          
+
       List<TreatmentRecordModel> treatmentRecords = [];
       double totalFeedbackScore = 0;
       int recordsWithFeedback = 0;
-      
+
       for (var doc in records.docs) {
         final data = doc.data();
         data['id'] = doc.id;
-        
+
         final record = TreatmentRecordModel.fromJson(data);
         treatmentRecords.add(record);
-        
+
         if (record.patientFeedbackScore != null) {
           totalFeedbackScore += record.patientFeedbackScore!;
           recordsWithFeedback++;
         }
       }
-      
+
       // Calculate analytics
       final analytics = {
         'totalSessions': treatmentRecords.length,
-        'completedSessions': treatmentRecords.where((r) => r.status == 'completed').length,
-        'canceledSessions': treatmentRecords.where((r) => r.status == 'canceled').length,
-        'avgFeedbackScore': recordsWithFeedback > 0 ? totalFeedbackScore / recordsWithFeedback : 0.0,
+        'completedSessions': treatmentRecords
+            .where((r) => r.status == 'completed')
+            .length,
+        'canceledSessions': treatmentRecords
+            .where((r) => r.status == 'canceled')
+            .length,
+        'avgFeedbackScore': recordsWithFeedback > 0
+            ? totalFeedbackScore / recordsWithFeedback
+            : 0.0,
         'healthImprovementScore': _calculateHealthImprovement(treatmentRecords),
       };
-      
+
       setState(() {
         _treatmentRecords = treatmentRecords;
         _analytics = analytics;
@@ -143,24 +155,26 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       });
     }
   }
-  
+
   double _calculateHealthImprovement(List<TreatmentRecordModel> records) {
     if (records.isEmpty) return 0.0;
-    
+
     // This is a simplified calculation - in a real app this would be more sophisticated
     // based on practitioners' assessments, patient feedback, and objective metrics
-    final recentRecords = records.take(5).toList(); // Take the 5 most recent records
-    
+    final recentRecords = records
+        .take(5)
+        .toList(); // Take the 5 most recent records
+
     double improvementScore = 0.0;
     int count = 0;
-    
+
     for (var record in recentRecords) {
       if (record.healthImprovementScore != null) {
         improvementScore += record.healthImprovementScore!;
         count++;
       }
     }
-    
+
     return count > 0 ? improvementScore / count : 0.0;
   }
 
@@ -168,12 +182,8 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        appBar: AppBar(
-          title: Text('Patient Progress'),
-        ),
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
+        appBar: AppBar(title: Text('Patient Progress')),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -188,23 +198,23 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
           children: [
             _buildPatientInfoCard(),
             SizedBox(height: 20),
-            
+
             _buildTimeRangeSelector(),
             SizedBox(height: 20),
-            
+
             _buildProgressSummary(),
             SizedBox(height: 20),
-            
+
             _buildProgressCharts(),
             SizedBox(height: 20),
-            
+
             _buildTreatmentRecordsList(),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildPatientInfoCard() {
     return Card(
       elevation: 2,
@@ -268,7 +278,9 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
               runSpacing: 8,
               children: [
                 Chip(
-                  label: Text('Dosha: ${_patient?.doshaType ?? 'Not determined'}'),
+                  label: Text(
+                    'Dosha: ${_patient?.doshaType ?? 'Not determined'}',
+                  ),
                   backgroundColor: Colors.green.shade100,
                 ),
                 if (_patient?.medicalHistory != null)
@@ -296,19 +308,13 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Row(
           children: [
-            Text(
-              'Time Range:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
+            Text('Time Range:', style: TextStyle(fontWeight: FontWeight.bold)),
             SizedBox(width: 12),
             Expanded(
               child: DropdownButton<String>(
                 value: _selectedTimeRange,
                 isExpanded: true,
-                underline: Container(
-                  height: 1,
-                  color: Colors.grey.shade300,
-                ),
+                underline: Container(height: 1, color: Colors.grey.shade300),
                 onChanged: (String? newValue) {
                   if (newValue != null) {
                     setState(() {
@@ -317,8 +323,9 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
                     });
                   }
                 },
-                items: _timeRanges
-                    .map<DropdownMenuItem<String>>((String value) {
+                items: _timeRanges.map<DropdownMenuItem<String>>((
+                  String value,
+                ) {
                   return DropdownMenuItem<String>(
                     value: value,
                     child: Text(value),
@@ -338,10 +345,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       children: [
         Text(
           'Progress Summary',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 12),
         Row(
@@ -372,22 +376,21 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
     );
   }
 
-  Widget _buildSummaryCard(String title, String value, IconData icon, Color color) {
+  Widget _buildSummaryCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: color, size: 20),
               SizedBox(height: 4),
               Text(
                 value,
@@ -400,10 +403,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
               SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade700,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -419,15 +419,14 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       children: [
         Text(
           'Health Progress',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 12),
         Card(
           elevation: 2,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -435,10 +434,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
               children: [
                 Text(
                   'Improvement Score',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
                 ),
                 SizedBox(height: 8),
                 Container(
@@ -450,9 +446,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
                             style: TextStyle(color: Colors.grey),
                           ),
                         )
-                      : LineChart(
-                          _healthProgressData(),
-                        ),
+                      : LineChart(_healthProgressData()),
                 ),
               ],
             ),
@@ -461,7 +455,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       ],
     );
   }
-  
+
   LineChartData _healthProgressData() {
     // Generate dummy data for demonstration
     // In a real app, this would come from actual treatment records
@@ -478,16 +472,10 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
         show: true,
         drawVerticalLine: true,
         getDrawingHorizontalLine: (value) {
-          return FlLine(
-            color: Colors.grey.shade300,
-            strokeWidth: 1,
-          );
+          return FlLine(color: Colors.grey.shade300, strokeWidth: 1);
         },
         getDrawingVerticalLine: (value) {
-          return FlLine(
-            color: Colors.grey.shade300,
-            strokeWidth: 1,
-          );
+          return FlLine(color: Colors.grey.shade300, strokeWidth: 1);
         },
       ),
       titlesData: FlTitlesData(
@@ -498,15 +486,13 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
             reservedSize: 22,
             getTitlesWidget: (value, meta) {
               // Show session number or date
-              if (value.toInt() < _treatmentRecords.length && value.toInt() % 2 == 0) {
+              if (value.toInt() < _treatmentRecords.length &&
+                  value.toInt() % 2 == 0) {
                 return Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
                     'S${value.toInt() + 1}',
-                    style: TextStyle(
-                      color: Colors.grey.shade600,
-                      fontSize: 10,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
                   ),
                 );
               }
@@ -522,10 +508,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
               if (value % 2 == 0) {
                 return Text(
                   value.toInt().toString(),
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 10,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
                   textAlign: TextAlign.center,
                 );
               }
@@ -533,12 +516,8 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
             },
           ),
         ),
-        rightTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
-        topTitles: AxisTitles(
-          sideTitles: SideTitles(showTitles: false),
-        ),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
       ),
       borderData: FlBorderData(
         show: true,
@@ -581,10 +560,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
       children: [
         Text(
           'Treatment History',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 12),
         _treatmentRecords.isEmpty
@@ -620,9 +596,9 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
     final statusColor = record.status == 'completed'
         ? Colors.green
         : record.status == 'canceled'
-            ? Colors.red
-            : Colors.orange;
-            
+        ? Colors.red
+        : Colors.orange;
+
     return Card(
       margin: EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -636,10 +612,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
                 Expanded(
                   child: Text(
                     record.treatmentName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                 ),
                 Container(
@@ -664,7 +637,8 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
               'Date: ${_formatDate(record.treatmentDate)}',
               style: TextStyle(color: Colors.grey.shade700),
             ),
-            if (record.practitionerNotes != null && record.practitionerNotes!.isNotEmpty)
+            if (record.practitionerNotes != null &&
+                record.practitionerNotes!.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 8.0),
                 child: Text(
@@ -705,7 +679,7 @@ class _PatientProgressReportScreenState extends State<PatientProgressReportScree
   String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
   }
-  
+
   int min(int a, int b) {
     return a < b ? a : b;
   }

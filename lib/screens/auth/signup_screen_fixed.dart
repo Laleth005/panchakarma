@@ -19,25 +19,25 @@ class _SignupScreenState extends State<SignupScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   UserRole _selectedRole = UserRole.patient;
   List<String> _specialties = [];
-  
+
   bool _isLoading = false;
   String? _errorMessage;
-  
+
   // Additional fields for Practitioner
   final _qualificationController = TextEditingController();
   final _experienceController = TextEditingController();
   final _bioController = TextEditingController();
-  
+
   // Additional fields for Patient
   final _dobController = TextEditingController();
   String? _selectedGender;
   final _addressController = TextEditingController();
   final _medicalHistoryController = TextEditingController();
   final _allergiesController = TextEditingController();
-  
+
   final List<String> _availableSpecialties = [
     'Vamana',
     'Virechana',
@@ -67,23 +67,24 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _registerUser() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
       // Firebase Auth registration
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-      
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
       if (userCredential.user != null) {
         // Send email verification
         await userCredential.user!.sendEmailVerification();
-        
+
         // Prepare user data based on role
         Map<String, dynamic> userData = {
           'uid': userCredential.user!.uid,
@@ -94,19 +95,20 @@ class _SignupScreenState extends State<SignupScreen> {
           'createdAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         };
-        
+
         // Add role-specific data
         if (_selectedRole == UserRole.practitioner) {
           userData.addAll({
             'qualification': _qualificationController.text.trim(),
-            'experienceYears': int.tryParse(_experienceController.text.trim()) ?? 0,
+            'experienceYears':
+                int.tryParse(_experienceController.text.trim()) ?? 0,
             'bio': _bioController.text.trim(),
             'specialties': _specialties,
             'isApproved': false, // Requires admin approval
             'rating': 0.0,
             'totalRatings': 0,
           });
-          
+
           // Add practitioner to practitioners collection
           await FirebaseFirestore.instance
               .collection('practitioners')
@@ -121,20 +123,20 @@ class _SignupScreenState extends State<SignupScreen> {
             'medicalHistory': _medicalHistoryController.text.trim(),
             'allergies': _allergiesController.text.trim(),
           });
-          
+
           // Add patient to patients collection
           await FirebaseFirestore.instance
               .collection('patients')
               .doc(userCredential.user!.uid)
               .set(userData);
         }
-        
+
         // Also store in general users collection
         await FirebaseFirestore.instance
             .collection('users')
             .doc(userCredential.user!.uid)
             .set(userData);
-        
+
         // Show success message and navigate to login
         setState(() => _isLoading = false);
         _showSuccessDialog();
@@ -163,7 +165,7 @@ class _SignupScreenState extends State<SignupScreen> {
       });
     }
   }
-  
+
   void _showSuccessDialog() {
     showDialog(
       context: context,
@@ -189,7 +191,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   padding: const EdgeInsets.only(top: 10),
                   child: Text(
                     'Your practitioner account requires approval before you can log in.',
-                    style: TextStyle(fontStyle: FontStyle.italic, color: Colors.orange[800]),
+                    style: TextStyle(
+                      fontStyle: FontStyle.italic,
+                      color: Colors.orange[800],
+                    ),
                   ),
                 ),
             ],
@@ -219,18 +224,17 @@ class _SignupScreenState extends State<SignupScreen> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: Color(0xFF2E7D32),
-            ),
+            colorScheme: ColorScheme.light(primary: Color(0xFF2E7D32)),
           ),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null) {
       setState(() {
-        _dobController.text = "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+        _dobController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
     }
   }
@@ -269,11 +273,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     top: -5,
                     child: Opacity(
                       opacity: 0.2,
-                      child: Icon(
-                        Icons.eco,
-                        size: 60,
-                        color: Colors.white,
-                      ),
+                      child: Icon(Icons.eco, size: 60, color: Colors.white),
                     ),
                   ),
                   Positioned(
@@ -300,7 +300,10 @@ class _SignupScreenState extends State<SignupScreen> {
                   children: [
                     if (_errorMessage != null)
                       Container(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8.0,
+                          horizontal: 16.0,
+                        ),
                         color: Colors.red.shade100,
                         child: Text(
                           _errorMessage!,
@@ -308,7 +311,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                     const SizedBox(height: 16),
-                    
+
                     // User Role Selection
                     Text(
                       'Register as:',
@@ -339,26 +342,27 @@ class _SignupScreenState extends State<SignupScreen> {
                         });
                       },
                       style: ButtonStyle(
-                        backgroundColor: MaterialStateProperty.resolveWith<Color>(
-                          (states) {
-                            if (states.contains(MaterialState.selected)) {
-                              return Color(0xFF2E7D32); // Selected background color
-                            }
-                            return Colors.white; // Unselected background color
-                          },
-                        ),
-                        foregroundColor: MaterialStateProperty.resolveWith<Color>(
-                          (states) {
-                            if (states.contains(MaterialState.selected)) {
-                              return Colors.white; // Selected text color
-                            }
-                            return Color(0xFF2E7D32); // Unselected text color
-                          },
-                        ),
+                        backgroundColor:
+                            MaterialStateProperty.resolveWith<Color>((states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Color(
+                                  0xFF2E7D32,
+                                ); // Selected background color
+                              }
+                              return Colors
+                                  .white; // Unselected background color
+                            }),
+                        foregroundColor:
+                            MaterialStateProperty.resolveWith<Color>((states) {
+                              if (states.contains(MaterialState.selected)) {
+                                return Colors.white; // Selected text color
+                              }
+                              return Color(0xFF2E7D32); // Unselected text color
+                            }),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Basic Information
                     Text(
                       'Basic Information',
@@ -369,7 +373,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Full Name
                     TextFormField(
                       controller: _fullNameController,
@@ -385,7 +389,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Email
                     TextFormField(
                       controller: _emailController,
@@ -398,14 +402,16 @@ class _SignupScreenState extends State<SignupScreen> {
                         if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        if (!RegExp(
+                          r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                        ).hasMatch(value)) {
                           return 'Please enter a valid email address';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Phone
                     TextFormField(
                       controller: _phoneController,
@@ -422,7 +428,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Password
                     TextFormField(
                       controller: _passwordController,
@@ -442,7 +448,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    
+
                     // Confirm Password
                     TextFormField(
                       controller: _confirmPasswordController,
@@ -462,7 +468,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    
+
                     // Role-specific fields
                     if (_selectedRole == UserRole.practitioner) ...[
                       Text(
@@ -474,7 +480,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Qualification
                       TextFormField(
                         controller: _qualificationController,
@@ -482,11 +488,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           labelText: 'Qualification',
                           prefixIcon: Icon(Icons.school_outlined),
                         ),
-                        validator: (value) => value?.isEmpty == true 
-                            ? 'Please enter your qualification' : null,
+                        validator: (value) => value?.isEmpty == true
+                            ? 'Please enter your qualification'
+                            : null,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Years of Experience
                       TextFormField(
                         controller: _experienceController,
@@ -495,18 +502,16 @@ class _SignupScreenState extends State<SignupScreen> {
                           prefixIcon: Icon(Icons.work_outline),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (value) => value?.isEmpty == true 
-                            ? 'Please enter your years of experience' : null,
+                        validator: (value) => value?.isEmpty == true
+                            ? 'Please enter your years of experience'
+                            : null,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Specialties
                       Text(
                         'Select your specialties:',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
-                        ),
+                        style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                       ),
                       const SizedBox(height: 8),
                       Wrap(
@@ -530,7 +535,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         }).toList(),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Bio
                       TextFormField(
                         controller: _bioController,
@@ -539,11 +544,12 @@ class _SignupScreenState extends State<SignupScreen> {
                           alignLabelWithHint: true,
                         ),
                         maxLines: 3,
-                        validator: (value) => value?.isEmpty == true 
-                            ? 'Please provide a brief professional bio' : null,
+                        validator: (value) => value?.isEmpty == true
+                            ? 'Please provide a brief professional bio'
+                            : null,
                       ),
                     ],
-                    
+
                     if (_selectedRole == UserRole.patient) ...[
                       Text(
                         'Personal Details',
@@ -554,7 +560,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Date of Birth
                       GestureDetector(
                         onTap: _selectDate,
@@ -566,13 +572,14 @@ class _SignupScreenState extends State<SignupScreen> {
                               prefixIcon: Icon(Icons.calendar_today),
                               hintText: 'YYYY-MM-DD',
                             ),
-                            validator: (value) => value?.isEmpty == true 
-                                ? 'Please select your date of birth' : null,
+                            validator: (value) => value?.isEmpty == true
+                                ? 'Please select your date of birth'
+                                : null,
                           ),
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Gender
                       DropdownButtonFormField<String>(
                         decoration: const InputDecoration(
@@ -599,7 +606,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Address
                       TextFormField(
                         controller: _addressController,
@@ -615,7 +622,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         },
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Medical History
                       TextFormField(
                         controller: _medicalHistoryController,
@@ -626,7 +633,7 @@ class _SignupScreenState extends State<SignupScreen> {
                         maxLines: 3,
                       ),
                       const SizedBox(height: 16),
-                      
+
                       // Allergies
                       TextFormField(
                         controller: _allergiesController,
@@ -637,23 +644,28 @@ class _SignupScreenState extends State<SignupScreen> {
                         maxLines: 2,
                       ),
                     ],
-                    
+
                     const SizedBox(height: 24),
-                    
+
                     // Register Button
                     ElevatedButton(
                       onPressed: _isLoading ? null : _registerUser,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: Color(0xFF2E7D32), // Deep green for button
+                        backgroundColor: Color(
+                          0xFF2E7D32,
+                        ), // Deep green for button
                       ),
                       child: _isLoading
                           ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('REGISTER', style: TextStyle(color: Colors.white)),
+                          : const Text(
+                              'REGISTER',
+                              style: TextStyle(color: Colors.white),
+                            ),
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Login Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -662,16 +674,21 @@ class _SignupScreenState extends State<SignupScreen> {
                         TextButton(
                           onPressed: () {
                             Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => const LoginScreen(),
+                              ),
                             );
                           },
-                          child: Text('Login', style: TextStyle(color: Color(0xFF2E7D32))),
+                          child: Text(
+                            'Login',
+                            style: TextStyle(color: Color(0xFF2E7D32)),
+                          ),
                         ),
                       ],
                     ),
-                    
+
                     const SizedBox(height: 16),
-                    
+
                     // Ayurvedic decorative footer
                     Container(
                       alignment: Alignment.center,

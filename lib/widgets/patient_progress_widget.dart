@@ -10,7 +10,7 @@ class PatientProgressWidget extends StatefulWidget {
   final String patientId;
   final String patientName;
   final Function() onViewFullProgress;
-  
+
   const PatientProgressWidget({
     Key? key,
     required this.patientId,
@@ -26,24 +26,29 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
   bool _isLoading = true;
   bool _hasError = false;
   List<TreatmentRecordModel> _treatmentRecords = [];
-  
+
   // Recovery stages
-  final List<String> _stages = ['Initial Assessment', 'Detoxification', 'Rejuvenation', 'Post-care'];
+  final List<String> _stages = [
+    'Initial Assessment',
+    'Detoxification',
+    'Rejuvenation',
+    'Post-care',
+  ];
   int _currentStage = 1; // Default to detox stage
   double _progressPercentage = 0.0;
-  
+
   @override
   void initState() {
     super.initState();
     _loadTreatmentRecords();
   }
-  
+
   Future<void> _loadTreatmentRecords() async {
     setState(() {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
       // Load treatment records from Firestore
       final QuerySnapshot snapshot = await FirebaseFirestore.instance
@@ -52,17 +57,17 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
           .orderBy('date', descending: true)
           .limit(10)
           .get();
-      
+
       if (snapshot.docs.isNotEmpty) {
         final records = snapshot.docs.map((doc) {
           final data = doc.data() as Map<String, dynamic>;
           data['id'] = doc.id;
           return TreatmentRecordModel.fromJson(data);
         }).toList();
-        
+
         // Determine current stage and progress
         _calculateProgress(records);
-        
+
         setState(() {
           _treatmentRecords = records;
           _isLoading = false;
@@ -81,13 +86,13 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
       });
     }
   }
-  
+
   void _calculateProgress(List<TreatmentRecordModel> records) {
     if (records.isEmpty) return;
-    
+
     // Simplified logic - in a real app, this would be more sophisticated
     // based on treatment type, duration, effectiveness scores, etc.
-    
+
     // Check latest record for stage information
     final latestRecord = records.first;
     if (latestRecord.treatmentStage != null) {
@@ -110,7 +115,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
           break;
       }
     }
-    
+
     // Calculate progress percentage within the current stage
     // This is simplified logic and would be more complex in a real app
     if (latestRecord.progressPercentage != null) {
@@ -118,7 +123,8 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
     } else {
       // Default calculation based on number of sessions
       final double baseProgress = (_currentStage / (_stages.length - 1)) * 100;
-      final double stageProgress = 25 * (records.length % 4) / 4; // Simple calculation
+      final double stageProgress =
+          25 * (records.length % 4) / 4; // Simple calculation
       _progressPercentage = baseProgress + stageProgress;
       if (_progressPercentage > 100) _progressPercentage = 100;
     }
@@ -181,7 +187,11 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Error loading progress data',
@@ -242,7 +252,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                     ],
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Progress Bar
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,9 +262,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                         children: [
                           Text(
                             'Overall Progress',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                            ),
+                            style: TextStyle(fontWeight: FontWeight.w500),
                           ),
                           Text(
                             '${_progressPercentage.toStringAsFixed(1)}%',
@@ -271,21 +279,20 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                         child: LinearProgressIndicator(
                           value: _progressPercentage / 100,
                           backgroundColor: Colors.grey.shade200,
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade500),
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.green.shade500,
+                          ),
                           minHeight: 10,
                         ),
                       ),
                     ],
                   ),
-                  
+
                   // Treatment Milestones
                   SizedBox(height: 24),
                   Text(
                     'Treatment Milestones',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 15,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                   ),
                   SizedBox(height: 12),
                   Row(
@@ -293,7 +300,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                     children: List.generate(_stages.length, (index) {
                       final isActive = index <= _currentStage;
                       final isCurrent = index == _currentStage;
-                      
+
                       return Column(
                         children: [
                           Container(
@@ -301,9 +308,14 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                             height: 32,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: isActive ? Colors.green.shade500 : Colors.grey.shade300,
+                              color: isActive
+                                  ? Colors.green.shade500
+                                  : Colors.grey.shade300,
                               border: isCurrent
-                                  ? Border.all(color: Colors.green.shade700, width: 2)
+                                  ? Border.all(
+                                      color: Colors.green.shade700,
+                                      width: 2,
+                                    )
                                   : null,
                               boxShadow: isCurrent
                                   ? [
@@ -311,7 +323,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                                         color: Colors.green.withOpacity(0.3),
                                         blurRadius: 8,
                                         spreadRadius: 2,
-                                      )
+                                      ),
                                     ]
                                   : null,
                             ),
@@ -326,15 +338,19 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                             _stages[index],
                             style: TextStyle(
                               fontSize: 10,
-                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
-                              color: isCurrent ? Colors.green.shade700 : Colors.grey.shade600,
+                              fontWeight: isCurrent
+                                  ? FontWeight.bold
+                                  : FontWeight.normal,
+                              color: isCurrent
+                                  ? Colors.green.shade700
+                                  : Colors.grey.shade600,
                             ),
                           ),
                         ],
                       );
                     }),
                   ),
-                  
+
                   // Recent Treatment Notes
                   if (_treatmentRecords.isNotEmpty) ...[
                     SizedBox(height: 24),
@@ -360,14 +376,15 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                _treatmentRecords.first.treatmentType ?? 'Unknown Treatment',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                _treatmentRecords.first.treatmentType ??
+                                    'Unknown Treatment',
+                                style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               Text(
                                 _treatmentRecords.first.date != null
-                                    ? DateFormat('MMM d, yyyy').format(_treatmentRecords.first.date!)
+                                    ? DateFormat(
+                                        'MMM d, yyyy',
+                                      ).format(_treatmentRecords.first.date!)
                                     : 'Date not available',
                                 style: TextStyle(
                                   fontSize: 12,
@@ -378,7 +395,8 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
                           ),
                           SizedBox(height: 6),
                           Text(
-                            _treatmentRecords.first.notes ?? 'No notes provided',
+                            _treatmentRecords.first.notes ??
+                                'No notes provided',
                             style: TextStyle(
                               fontSize: 13,
                               color: Colors.grey.shade800,
@@ -397,7 +415,7 @@ class _PatientProgressWidgetState extends State<PatientProgressWidget> {
       ),
     );
   }
-  
+
   IconData _getStageIcon(int index) {
     switch (index) {
       case 0:

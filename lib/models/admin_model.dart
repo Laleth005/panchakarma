@@ -4,7 +4,7 @@ class AdminModel extends UserModel {
   final String clinicName;
   final String clinicAddress;
   final String? clinicLogo;
-  
+
   AdminModel({
     required super.uid,
     required super.email,
@@ -17,7 +17,7 @@ class AdminModel extends UserModel {
     required super.createdAt,
     required super.updatedAt,
   }) : super(role: UserRole.admin);
-  
+
   factory AdminModel.fromJson(Map<String, dynamic> json) {
     final userModel = UserModel.fromJson(json);
     return AdminModel(
@@ -33,7 +33,7 @@ class AdminModel extends UserModel {
       updatedAt: userModel.updatedAt,
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();

@@ -8,24 +8,27 @@ import 'conversation_screen.dart';
 
 class PractitionerMessagesScreen extends StatefulWidget {
   final String? practitionerId;
-  
-  const PractitionerMessagesScreen({this.practitionerId, Key? key}) : super(key: key);
+
+  const PractitionerMessagesScreen({this.practitionerId, Key? key})
+    : super(key: key);
 
   @override
-  _PractitionerMessagesScreenState createState() => _PractitionerMessagesScreenState();
+  _PractitionerMessagesScreenState createState() =>
+      _PractitionerMessagesScreenState();
 }
 
-class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen> {
+class _PractitionerMessagesScreenState
+    extends State<PractitionerMessagesScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
   List<ConversationModel> _conversations = [];
   String? _practitionerId;
   PractitionerModel? _practitionerData;
-  
+
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -45,7 +48,7 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
     try {
       // First, determine the practitioner ID
       _practitionerId = widget.practitionerId;
-      
+
       if (_practitionerId == null) {
         // Try to get from Firebase Auth if not provided
         final User? currentUser = _auth.currentUser;
@@ -78,10 +81,12 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
           .get();
 
       _conversations = conversationsSnapshot.docs
-          .map((doc) => ConversationModel.fromJson(
-                doc.data() as Map<String, dynamic>, 
-                doc.id
-              ))
+          .map(
+            (doc) => ConversationModel.fromJson(
+              doc.data() as Map<String, dynamic>,
+              doc.id,
+            ),
+          )
           .toList();
 
       setState(() {
@@ -107,7 +112,7 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
     if (_searchQuery.isEmpty) {
       return _conversations;
     }
-    
+
     return _conversations.where((conversation) {
       // Search in participant names
       for (final name in conversation.participantNames.values) {
@@ -115,12 +120,14 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
           return true;
         }
       }
-      
+
       // Search in last message
-      if (conversation.lastMessageContent.toLowerCase().contains(_searchQuery)) {
+      if (conversation.lastMessageContent.toLowerCase().contains(
+        _searchQuery,
+      )) {
         return true;
       }
-      
+
       return false;
     }).toList();
   }
@@ -141,8 +148,8 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hasError
-              ? _buildErrorView()
-              : _buildConversationsList(),
+          ? _buildErrorView()
+          : _buildConversationsList(),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           // Navigate to new message screen (to be implemented)
@@ -228,9 +235,7 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
               : null,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10.0),
-            borderSide: BorderSide(
-              color: Theme.of(context).primaryColor,
-            ),
+            borderSide: BorderSide(color: Theme.of(context).primaryColor),
           ),
         ),
         onChanged: _handleSearch,
@@ -239,16 +244,22 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
   }
 
   Widget _buildConversationTile(ConversationModel conversation) {
-    final otherParticipantName = conversation.getOtherParticipantName(_practitionerId ?? '');
+    final otherParticipantName = conversation.getOtherParticipantName(
+      _practitionerId ?? '',
+    );
     final hasUnread = conversation.hasUnreadMessages(_practitionerId ?? '');
     final formattedTime = _formatTimestamp(conversation.lastMessageTimestamp);
-    
+
     // Get initial letter for avatar
-    final initial = otherParticipantName.isNotEmpty ? otherParticipantName[0].toUpperCase() : '?';
-    
+    final initial = otherParticipantName.isNotEmpty
+        ? otherParticipantName[0].toUpperCase()
+        : '?';
+
     return ListTile(
       leading: CircleAvatar(
-        backgroundColor: hasUnread ? Theme.of(context).colorScheme.primary : Colors.grey,
+        backgroundColor: hasUnread
+            ? Theme.of(context).colorScheme.primary
+            : Colors.grey,
         child: Text(
           initial,
           style: TextStyle(
@@ -279,7 +290,9 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
             formattedTime,
             style: TextStyle(
               fontSize: 12,
-              color: hasUnread ? Theme.of(context).colorScheme.primary : Colors.grey,
+              color: hasUnread
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.grey,
             ),
           ),
           if (hasUnread)
@@ -304,16 +317,22 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
               recipientName: otherParticipantName,
             ),
           ),
-        ).then((_) => _loadConversations()); // Refresh after returning from conversation
+        ).then(
+          (_) => _loadConversations(),
+        ); // Refresh after returning from conversation
       },
     );
   }
-  
+
   String _formatTimestamp(DateTime timestamp) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dateToCheck = DateTime(timestamp.year, timestamp.month, timestamp.day);
-    
+    final dateToCheck = DateTime(
+      timestamp.year,
+      timestamp.month,
+      timestamp.day,
+    );
+
     if (dateToCheck == today) {
       // Today, show time only
       return DateFormat.jm().format(timestamp); // e.g. 5:30 PM
@@ -328,7 +347,7 @@ class _PractitionerMessagesScreenState extends State<PractitionerMessagesScreen>
       return DateFormat('MMM d').format(timestamp); // e.g. Jan 5
     }
   }
-  
+
   @override
   void dispose() {
     _searchController.dispose();

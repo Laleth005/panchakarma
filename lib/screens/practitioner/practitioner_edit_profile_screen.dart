@@ -6,13 +6,16 @@ import '../../models/practitioner_model.dart';
 class PractitionerEditProfileScreen extends StatefulWidget {
   final PractitionerModel practitioner;
 
-  const PractitionerEditProfileScreen({Key? key, required this.practitioner}) : super(key: key);
+  const PractitionerEditProfileScreen({Key? key, required this.practitioner})
+    : super(key: key);
 
   @override
-  _PractitionerEditProfileScreenState createState() => _PractitionerEditProfileScreenState();
+  _PractitionerEditProfileScreenState createState() =>
+      _PractitionerEditProfileScreenState();
 }
 
-class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileScreen> {
+class _PractitionerEditProfileScreenState
+    extends State<PractitionerEditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = false;
@@ -32,12 +35,22 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
   }
 
   void _initializeControllers() {
-    _fullNameController = TextEditingController(text: widget.practitioner.fullName);
-    _phoneController = TextEditingController(text: widget.practitioner.phoneNumber ?? '');
-    _qualificationController = TextEditingController(text: widget.practitioner.qualification ?? '');
-    _experienceController = TextEditingController(text: widget.practitioner.experience ?? '');
+    _fullNameController = TextEditingController(
+      text: widget.practitioner.fullName,
+    );
+    _phoneController = TextEditingController(
+      text: widget.practitioner.phoneNumber ?? '',
+    );
+    _qualificationController = TextEditingController(
+      text: widget.practitioner.qualification ?? '',
+    );
+    _experienceController = TextEditingController(
+      text: widget.practitioner.experience ?? '',
+    );
     _bioController = TextEditingController(text: widget.practitioner.bio ?? '');
-    _specialties = widget.practitioner.specialties != null ? List<String>.from(widget.practitioner.specialties!) : [];
+    _specialties = widget.practitioner.specialties != null
+        ? List<String>.from(widget.practitioner.specialties!)
+        : [];
   }
 
   @override
@@ -52,7 +65,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
 
   Future<void> _saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     try {
       setState(() {
         _isLoading = true;
@@ -74,15 +87,15 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
           .collection('practitioners')
           .doc(widget.practitioner.uid)
           .update(updatedData);
-      
+
       setState(() {
         _isLoading = false;
       });
 
       // Show success message
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Profile updated successfully')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Profile updated successfully')));
 
       // Return true to indicate the profile was updated
       Navigator.pop(context, true);
@@ -90,7 +103,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
       setState(() {
         _isLoading = false;
       });
-      
+
       print('Error updating profile: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update profile. Please try again.')),
@@ -118,10 +131,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
       appBar: AppBar(
         title: Text(
           'Edit Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF2E7D32), // Green theme
         elevation: 0,
@@ -147,11 +157,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
         ],
       ),
       body: _isLoading
-          ? Center(
-              child: CircularProgressIndicator(
-                color: Color(0xFF2E7D32),
-              ),
-            )
+          ? Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
           : _buildForm(),
     );
   }
@@ -224,11 +230,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
                   : null,
             ),
             child: widget.practitioner.profileImageUrl == null
-                ? Icon(
-                    Icons.person,
-                    size: 60,
-                    color: Colors.grey[800],
-                  )
+                ? Icon(Icons.person, size: 60, color: Colors.grey[800])
                 : null,
           ),
           SizedBox(height: 8),
@@ -258,9 +260,7 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
       controller: controller,
       decoration: InputDecoration(
         labelText: label,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8.0),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.0)),
       ),
       validator: validator,
       keyboardType: keyboardType,
@@ -270,16 +270,13 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
 
   Widget _buildSpecialtiesSection() {
     final TextEditingController _specialtyController = TextEditingController();
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Specialties',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         SizedBox(height: 8),
         Row(
@@ -315,12 +312,16 @@ class _PractitionerEditProfileScreenState extends State<PractitionerEditProfileS
         Wrap(
           spacing: 8.0,
           runSpacing: 8.0,
-          children: _specialties.map((specialty) => Chip(
-            label: Text(specialty),
-            deleteIcon: Icon(Icons.close, size: 18),
-            onDeleted: () => _removeSpecialty(specialty),
-            backgroundColor: Colors.grey[200],
-          )).toList(),
+          children: _specialties
+              .map(
+                (specialty) => Chip(
+                  label: Text(specialty),
+                  deleteIcon: Icon(Icons.close, size: 18),
+                  onDeleted: () => _removeSpecialty(specialty),
+                  backgroundColor: Colors.grey[200],
+                ),
+              )
+              .toList(),
         ),
       ],
     );

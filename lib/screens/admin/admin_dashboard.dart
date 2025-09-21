@@ -52,11 +52,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
+      return Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     return Scaffold(
@@ -75,9 +71,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
           padding: EdgeInsets.zero,
           children: <Widget>[
             DrawerHeader(
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor,
-              ),
+              decoration: BoxDecoration(color: Theme.of(context).primaryColor),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -96,17 +90,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   SizedBox(height: 10),
                   Text(
                     _adminData?.fullName ?? 'Admin',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                   Text(
                     _adminData?.email ?? '',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                 ],
               ),
@@ -183,20 +171,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
           children: [
             Text(
               'Welcome, ${_adminData?.fullName ?? "Admin"}',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             Text(
               '${_adminData?.clinicName ?? "Panchakarma Clinic"}',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
             SizedBox(height: 24),
-            
+
             // Overview Cards
             Row(
               children: [
@@ -233,19 +215,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
                 ),
               ],
             ),
-            
+
             SizedBox(height: 32),
             Text(
               'Today\'s Schedule',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             Expanded(
-              child: Center(
-                child: Text('No scheduled sessions for today'),
-              ),
+              child: Center(child: Text('No scheduled sessions for today')),
             ),
           ],
         ),
@@ -253,13 +230,16 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
-  Widget _buildOverviewCard(String title, String value, IconData icon, Color color) {
+  Widget _buildOverviewCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Expanded(
       child: Card(
         elevation: 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
@@ -267,17 +247,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               Row(
                 children: [
-                  Icon(
-                    icon,
-                    color: color,
-                  ),
+                  Icon(icon, color: color),
                   SizedBox(width: 8),
                   Text(
                     title,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
                   ),
                 ],
               ),

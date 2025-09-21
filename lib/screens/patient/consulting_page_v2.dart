@@ -18,13 +18,13 @@ class _ConsultingPageState extends State<ConsultingPage> {
   bool _isLoading = true;
   List<PractitionerModel> _practitioners = [];
   List<PractitionerModel> _filteredPractitioners = [];
-  
+
   // Green theme colors
   final Color primaryGreen = Color(0xFF1B5E20);
   final Color secondaryGreen = Color(0xFF2E7D32);
   final Color lightGreen = Color(0xFF4CAF50);
   final Color paleGreen = Color(0xFFE8F5E9);
-  
+
   // Dummy practitioners data for testing if Firestore query fails
   final List<PractitionerModel> _dummyPractitioners = [
     PractitionerModel(
@@ -34,7 +34,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
       specialties: ['Vamana', 'Panchakarma', 'Herbal Medicine'],
       qualification: 'BAMS, MD (Ayurveda)',
       experience: '15',
-      bio: 'Specializing in traditional Panchakarma therapies with focus on Vata-Pitta imbalances.',
+      bio:
+          'Specializing in traditional Panchakarma therapies with focus on Vata-Pitta imbalances.',
       phoneNumber: '+91 9876543210',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
@@ -46,7 +47,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
       specialties: ['Virechana', 'Ayurvedic Diet', 'Pulse Diagnosis'],
       qualification: 'BAMS, PhD',
       experience: '12',
-      bio: 'Expert in Ayurvedic dietary recommendations and lifestyle modifications for chronic conditions.',
+      bio:
+          'Expert in Ayurvedic dietary recommendations and lifestyle modifications for chronic conditions.',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ),
@@ -57,7 +59,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
       specialties: ['Basti', 'Nasya', 'Panchakarma'],
       qualification: 'BAMS, MSc Medicinal Plants',
       experience: '20',
-      bio: 'Specializing in Ayurvedic herbs and formulations for respiratory and digestive disorders.',
+      bio:
+          'Specializing in Ayurvedic herbs and formulations for respiratory and digestive disorders.',
       createdAt: DateTime.now(),
       updatedAt: DateTime.now(),
     ),
@@ -82,7 +85,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
 
     try {
       // Get practitioners from Firestore
-      final QuerySnapshot practitionerSnapshot = await FirebaseFirestore.instance
+      final QuerySnapshot practitionerSnapshot = await FirebaseFirestore
+          .instance
           .collection('practitioners')
           .where('isVerified', isEqualTo: true)
           .where('isActive', isEqualTo: true)
@@ -98,11 +102,13 @@ class _ConsultingPageState extends State<ConsultingPage> {
         return;
       }
 
-      final List<PractitionerModel> practitioners = practitionerSnapshot.docs.map((doc) {
-        final data = doc.data() as Map<String, dynamic>;
-        data['uid'] = doc.id; // Add UID to the data
-        return PractitionerModel.fromJson(data);
-      }).toList();
+      final List<PractitionerModel> practitioners = practitionerSnapshot.docs
+          .map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            data['uid'] = doc.id; // Add UID to the data
+            return PractitionerModel.fromJson(data);
+          })
+          .toList();
 
       setState(() {
         _practitioners = practitioners;
@@ -111,7 +117,7 @@ class _ConsultingPageState extends State<ConsultingPage> {
       });
     } catch (e) {
       print('Error loading practitioners: $e');
-      
+
       // Use dummy data if error occurs
       setState(() {
         _practitioners = _dummyPractitioners;
@@ -137,15 +143,21 @@ class _ConsultingPageState extends State<ConsultingPage> {
         // Apply search filter
         if (_searchController.text.isNotEmpty) {
           final searchLower = _searchController.text.toLowerCase();
-          matchesSearch = practitioner.fullName.toLowerCase().contains(searchLower) ||
-              (practitioner.specialties != null && practitioner.specialties!.any((spec) => 
-                spec.toLowerCase().contains(searchLower)));
+          matchesSearch =
+              practitioner.fullName.toLowerCase().contains(searchLower) ||
+              (practitioner.specialties != null &&
+                  practitioner.specialties!.any(
+                    (spec) => spec.toLowerCase().contains(searchLower),
+                  ));
         }
 
         // Apply specialization filters
         if (_filters.isNotEmpty) {
-          matchesFilters = practitioner.specialties != null && _filters.every((filter) =>
-              practitioner.specialties!.contains(filter));
+          matchesFilters =
+              practitioner.specialties != null &&
+              _filters.every(
+                (filter) => practitioner.specialties!.contains(filter),
+              );
         }
 
         return matchesSearch && matchesFilters;
@@ -168,8 +180,10 @@ class _ConsultingPageState extends State<ConsultingPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Find Practitioners',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Find Practitioners',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: primaryGreen,
         elevation: 0,
       ),
@@ -182,9 +196,7 @@ class _ConsultingPageState extends State<ConsultingPage> {
                 _buildFilterChips(),
                 _filteredPractitioners.isEmpty
                     ? _buildNoResults()
-                    : Expanded(
-                        child: _buildPractitionerList(),
-                      ),
+                    : Expanded(child: _buildPractitionerList()),
               ],
             ),
       floatingActionButton: FloatingActionButton.extended(
@@ -192,9 +204,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ConsultationRequestScreen(
-                patientId: widget.patientId,
-              ),
+              builder: (context) =>
+                  ConsultationRequestScreen(patientId: widget.patientId),
             ),
           );
         },
@@ -292,9 +303,7 @@ class _ConsultingPageState extends State<ConsultingPage> {
                 selectedColor: primaryGreen.withOpacity(0.2),
                 checkmarkColor: primaryGreen,
                 labelStyle: TextStyle(
-                  color: isSelected
-                      ? primaryGreen
-                      : Colors.black87,
+                  color: isSelected ? primaryGreen : Colors.black87,
                 ),
               );
             }).toList(),
@@ -310,28 +319,18 @@ class _ConsultingPageState extends State<ConsultingPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.search_off,
-              size: 80,
-              color: Colors.grey.shade400,
-            ),
+            Icon(Icons.search_off, size: 80, color: Colors.grey.shade400),
             SizedBox(height: 16),
             Text(
               'No practitioners found',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 8),
             Text(
               _filters.isNotEmpty
                   ? 'Try removing some filters'
                   : 'Try a different search term',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -365,10 +364,10 @@ class _ConsultingPageState extends State<ConsultingPage> {
                 CircleAvatar(
                   radius: 30,
                   backgroundColor: primaryGreen.withOpacity(0.2),
-                  backgroundImage: practitioner.profileImageUrl != null 
-                      ? NetworkImage(practitioner.profileImageUrl!) 
+                  backgroundImage: practitioner.profileImageUrl != null
+                      ? NetworkImage(practitioner.profileImageUrl!)
                       : null,
-                  child: practitioner.profileImageUrl == null 
+                  child: practitioner.profileImageUrl == null
                       ? Icon(Icons.person, color: primaryGreen, size: 30)
                       : null,
                 ),
@@ -387,10 +386,7 @@ class _ConsultingPageState extends State<ConsultingPage> {
                       SizedBox(height: 4),
                       Text(
                         practitioner.qualification ?? 'Ayurveda Practitioner',
-                        style: TextStyle(
-                          color: Colors.grey[600],
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: Colors.grey[600], fontSize: 14),
                       ),
                       SizedBox(height: 4),
                       // Show experience if available
@@ -416,7 +412,8 @@ class _ConsultingPageState extends State<ConsultingPage> {
                 overflow: TextOverflow.ellipsis,
               ),
             SizedBox(height: 8),
-            if (practitioner.specialties != null && practitioner.specialties!.isNotEmpty)
+            if (practitioner.specialties != null &&
+                practitioner.specialties!.isNotEmpty)
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -424,10 +421,7 @@ class _ConsultingPageState extends State<ConsultingPage> {
                   return Chip(
                     label: Text(spec),
                     backgroundColor: paleGreen,
-                    labelStyle: TextStyle(
-                      color: primaryGreen,
-                      fontSize: 12,
-                    ),
+                    labelStyle: TextStyle(color: primaryGreen, fontSize: 12),
                     visualDensity: VisualDensity(horizontal: 0, vertical: -4),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   );
@@ -512,19 +506,20 @@ class ConsultationFormScreen extends StatefulWidget {
 
 class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Green theme colors
   final Color primaryGreen = Color(0xFF1B5E20);
   final Color secondaryGreen = Color(0xFF2E7D32);
   final Color lightGreen = Color(0xFF4CAF50);
   final Color paleGreen = Color(0xFFE8F5E9);
-  
+
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  final TextEditingController _medicalHistoryController = TextEditingController();
+  final TextEditingController _medicalHistoryController =
+      TextEditingController();
   final TextEditingController _conditionController = TextEditingController();
-  
+
   // Form state
   DateTime _selectedDate = DateTime.now().add(Duration(days: 1));
   TimeOfDay _selectedTime = TimeOfDay(hour: 10, minute: 0);
@@ -532,7 +527,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
   String _selectedPatientType = 'New Patient';
   String _selectedCondition = '';
   bool _isSubmitting = false;
-  
+
   // Common health conditions in Ayurveda
   final List<String> _commonConditions = [
     'Digestive Issues',
@@ -545,7 +540,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
     'Sleep Disorders',
     'Other (Please specify)',
   ];
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -554,7 +549,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
     _conditionController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -563,55 +558,51 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       lastDate: DateTime.now().add(Duration(days: 30)),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: primaryGreen,
-            ),
-          ),
+          data: Theme.of(
+            context,
+          ).copyWith(colorScheme: ColorScheme.light(primary: primaryGreen)),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
       });
     }
   }
-  
+
   Future<void> _selectTime(BuildContext context) async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: primaryGreen,
-            ),
-          ),
+          data: Theme.of(
+            context,
+          ).copyWith(colorScheme: ColorScheme.light(primary: primaryGreen)),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
       });
     }
   }
-  
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isSubmitting = true;
     });
-    
+
     try {
       // Create consultation request data
       final Map<String, dynamic> consultationData = {
@@ -619,27 +610,30 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
         'patientAge': int.tryParse(_ageController.text) ?? 0,
         'patientGender': _selectedGender,
         'patientType': _selectedPatientType,
-        'condition': _selectedCondition == 'Other (Please specify)' 
-            ? _conditionController.text 
+        'condition': _selectedCondition == 'Other (Please specify)'
+            ? _conditionController.text
             : _selectedCondition,
         'medicalHistory': _medicalHistoryController.text,
         'appointmentDate': Timestamp.fromDate(_selectedDate),
-        'appointmentTime': '${_selectedTime.hour}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+        'appointmentTime':
+            '${_selectedTime.hour}:${_selectedTime.minute.toString().padLeft(2, '0')}',
         'practitionerId': widget.practitioner.uid,
         'practitionerName': widget.practitioner.fullName,
         'status': 'pending',
         'isApproved': false, // Default is not approved
         'createdAt': Timestamp.now(),
       };
-      
+
       // Add patientId if available
       if (widget.patientId != null) {
         consultationData['patientId'] = widget.patientId;
       }
-      
+
       // Save to Firestore
-      await FirebaseFirestore.instance.collection('consultation_requests').add(consultationData);
-      
+      await FirebaseFirestore.instance
+          .collection('consultation_requests')
+          .add(consultationData);
+
       // Show success and navigate back
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -647,10 +641,10 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
           backgroundColor: primaryGreen,
         ),
       );
-      
+
       // Delay navigation slightly to show the snackbar
       await Future.delayed(Duration(seconds: 1));
-      
+
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -670,13 +664,15 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Schedule Consultation',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'Schedule Consultation',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: primaryGreen,
       ),
       backgroundColor: paleGreen.withOpacity(0.3),
@@ -690,17 +686,17 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
               children: [
                 // Practitioner info
                 _buildPractitionerInfo(),
-                
+
                 SizedBox(height: 24),
                 _buildSectionTitle('Patient Information'),
                 SizedBox(height: 16),
-                
+
                 // Patient type selection
                 _buildSectionSubtitle('Are you new to Panchakarma?'),
                 SizedBox(height: 8),
                 _buildPatientTypeSelector(),
                 SizedBox(height: 16),
-                
+
                 // Patient name
                 _buildTextField(
                   controller: _nameController,
@@ -713,7 +709,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   },
                 ),
                 SizedBox(height: 16),
-                
+
                 // Row for age and gender
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -754,16 +750,18 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   ],
                 ),
                 SizedBox(height: 24),
-                
+
                 _buildSectionTitle('Health Condition'),
                 SizedBox(height: 16),
-                
+
                 // Condition selection
-                _buildSectionSubtitle('What condition are you seeking help with?'),
+                _buildSectionSubtitle(
+                  'What condition are you seeking help with?',
+                ),
                 SizedBox(height: 8),
                 _buildConditionSelector(),
                 SizedBox(height: 16),
-                
+
                 // Additional condition details if "Other" is selected
                 if (_selectedCondition == 'Other (Please specify)')
                   Column(
@@ -773,7 +771,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                         controller: _conditionController,
                         labelText: 'Please specify your condition',
                         validator: (value) {
-                          if (_selectedCondition == 'Other (Please specify)' && 
+                          if (_selectedCondition == 'Other (Please specify)' &&
                               (value == null || value.isEmpty)) {
                             return 'Please describe your condition';
                           }
@@ -783,7 +781,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                       SizedBox(height: 16),
                     ],
                   ),
-                
+
                 // Medical history
                 _buildTextField(
                   controller: _medicalHistoryController,
@@ -792,7 +790,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   maxLines: 3,
                 ),
                 SizedBox(height: 24),
-                
+
                 // PDF upload section (commented out for future use)
                 _buildSectionTitle('Medical Reports'),
                 SizedBox(height: 8),
@@ -801,7 +799,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   fontSize: 14,
                 ),
                 SizedBox(height: 8),
-                
+
                 // PDF upload button (commented out for future use)
                 Container(
                   width: double.infinity,
@@ -813,11 +811,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.upload_file,
-                        size: 40,
-                        color: Colors.grey,
-                      ),
+                      Icon(Icons.upload_file, size: 40, color: Colors.grey),
                       SizedBox(height: 8),
                       Text(
                         'Upload PDF Reports',
@@ -829,10 +823,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                       SizedBox(height: 4),
                       Text(
                         'Feature coming soon',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       // IMPORTANT: PDF upload functionality is commented out for future implementation
                       // To implement this feature in the future:
@@ -844,10 +835,10 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                   ),
                 ),
                 SizedBox(height: 24),
-                
+
                 _buildSectionTitle('Appointment Details'),
                 SizedBox(height: 16),
-                
+
                 // Date and time selection
                 Row(
                   children: [
@@ -860,7 +851,9 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                             labelText: 'Date',
                             suffixIcon: Icons.calendar_today,
                             controller: TextEditingController(
-                              text: DateFormat('dd/MM/yyyy').format(_selectedDate),
+                              text: DateFormat(
+                                'dd/MM/yyyy',
+                              ).format(_selectedDate),
                             ),
                             validator: (value) {
                               if (value == null || value.isEmpty) {
@@ -896,7 +889,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                     ),
                   ],
                 ),
-                
+
                 SizedBox(height: 32),
                 // Submit button
                 SizedBox(
@@ -920,8 +913,13 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : Text('Request Consultation',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : Text(
+                            'Request Consultation',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 SizedBox(height: 24),
@@ -932,7 +930,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildPractitionerInfo() {
     return Card(
       margin: EdgeInsets.zero,
@@ -960,26 +958,20 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
                 children: [
                   Text(
                     widget.practitioner.fullName,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                    ),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                   ),
                   SizedBox(height: 4),
                   Text(
-                    widget.practitioner.qualification ?? 'Ayurveda Practitioner',
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                    ),
+                    widget.practitioner.qualification ??
+                        'Ayurveda Practitioner',
+                    style: TextStyle(color: Colors.grey[600]),
                   ),
                   SizedBox(height: 4),
-                  if (widget.practitioner.specialties != null && widget.practitioner.specialties!.isNotEmpty)
+                  if (widget.practitioner.specialties != null &&
+                      widget.practitioner.specialties!.isNotEmpty)
                     Text(
                       'Specialties: ${widget.practitioner.specialties!.join(", ")}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                     ),
                 ],
               ),
@@ -989,7 +981,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -1000,7 +992,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildSectionSubtitle(String subtitle, {double fontSize = 15}) {
     return Text(
       subtitle,
@@ -1011,7 +1003,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildTextField({
     TextEditingController? controller,
     String? labelText,
@@ -1026,7 +1018,9 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: primaryGreen) : null,
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: primaryGreen)
+            : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -1043,7 +1037,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       validator: validator,
     );
   }
-  
+
   Widget _buildDropdown<T>({
     required T value,
     required String labelText,
@@ -1066,15 +1060,12 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
         ),
       ),
       items: items.map<DropdownMenuItem<T>>((T value) {
-        return DropdownMenuItem<T>(
-          value: value,
-          child: Text(value.toString()),
-        );
+        return DropdownMenuItem<T>(value: value, child: Text(value.toString()));
       }).toList(),
       onChanged: onChanged,
     );
   }
-  
+
   Widget _buildPatientTypeSelector() {
     return Container(
       decoration: BoxDecoration(
@@ -1095,7 +1086,8 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
             child: _buildSelectionTile(
               title: 'Returning Patient',
               isSelected: _selectedPatientType == 'Returning Patient',
-              onTap: () => setState(() => _selectedPatientType = 'Returning Patient'),
+              onTap: () =>
+                  setState(() => _selectedPatientType = 'Returning Patient'),
               icon: Icons.person_outlined,
             ),
           ),
@@ -1103,7 +1095,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildSelectionTile({
     required String title,
     required bool isSelected,
@@ -1142,7 +1134,7 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
       ),
     );
   }
-  
+
   Widget _buildConditionSelector() {
     return Container(
       decoration: BoxDecoration(
@@ -1173,24 +1165,22 @@ class _ConsultationFormScreenState extends State<ConsultationFormScreen> {
 class ConsultationRequestScreen extends StatefulWidget {
   final String? patientId;
 
-  const ConsultationRequestScreen({
-    Key? key,
-    this.patientId,
-  }) : super(key: key);
+  const ConsultationRequestScreen({Key? key, this.patientId}) : super(key: key);
 
   @override
-  _ConsultationRequestScreenState createState() => _ConsultationRequestScreenState();
+  _ConsultationRequestScreenState createState() =>
+      _ConsultationRequestScreenState();
 }
 
 class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Green theme colors
   final Color primaryGreen = Color(0xFF1B5E20);
   final Color secondaryGreen = Color(0xFF2E7D32);
   final Color lightGreen = Color(0xFF4CAF50);
   final Color paleGreen = Color(0xFFE8F5E9);
-  
+
   // Form controllers
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
@@ -1198,7 +1188,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _conditionController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
-  
+
   // Form state
   DateTime _selectedDate = DateTime.now().add(Duration(days: 1));
   String _selectedGender = 'Male';
@@ -1206,7 +1196,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
   String _selectedCondition = '';
   List<String> _selectedSpecializations = [];
   bool _isSubmitting = false;
-  
+
   // Common health conditions in Ayurveda
   final List<String> _commonConditions = [
     'Digestive Issues',
@@ -1219,7 +1209,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
     'Sleep Disorders',
     'Other (Please specify)',
   ];
-  
+
   // Specializations
   final List<String> _specializations = [
     'Vamana',
@@ -1230,7 +1220,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
     'Panchakarma',
     'Ayurveda',
   ];
-  
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -1241,7 +1231,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
     _descriptionController.dispose();
     super.dispose();
   }
-  
+
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -1250,23 +1240,21 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       lastDate: DateTime.now().add(Duration(days: 30)),
       builder: (context, child) {
         return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: primaryGreen,
-            ),
-          ),
+          data: Theme.of(
+            context,
+          ).copyWith(colorScheme: ColorScheme.light(primary: primaryGreen)),
           child: child!,
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
       });
     }
   }
-  
+
   void _toggleSpecialization(String specialization) {
     setState(() {
       if (_selectedSpecializations.contains(specialization)) {
@@ -1276,16 +1264,16 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       }
     });
   }
-  
+
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     setState(() {
       _isSubmitting = true;
     });
-    
+
     try {
       // Create consultation request data
       final Map<String, dynamic> consultationData = {
@@ -1295,8 +1283,8 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
         'patientType': _selectedPatientType,
         'email': _emailController.text,
         'phone': _phoneController.text,
-        'condition': _selectedCondition == 'Other (Please specify)' 
-            ? _conditionController.text 
+        'condition': _selectedCondition == 'Other (Please specify)'
+            ? _conditionController.text
             : _selectedCondition,
         'description': _descriptionController.text,
         'preferredSpecializations': _selectedSpecializations,
@@ -1305,15 +1293,17 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
         'isApproved': false, // Default is not approved
         'createdAt': Timestamp.now(),
       };
-      
+
       // Add patientId if available
       if (widget.patientId != null) {
         consultationData['patientId'] = widget.patientId;
       }
-      
+
       // Save to Firestore
-      await FirebaseFirestore.instance.collection('general_consultations').add(consultationData);
-      
+      await FirebaseFirestore.instance
+          .collection('general_consultations')
+          .add(consultationData);
+
       // Show success and navigate back
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1321,10 +1311,10 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
           backgroundColor: primaryGreen,
         ),
       );
-      
+
       // Delay navigation slightly to show the snackbar
       await Future.delayed(Duration(seconds: 1));
-      
+
       if (mounted) {
         Navigator.of(context).pop();
       }
@@ -1344,13 +1334,15 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('New Consultation Request',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        title: Text(
+          'New Consultation Request',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         backgroundColor: primaryGreen,
       ),
       backgroundColor: paleGreen.withOpacity(0.3),
@@ -1365,16 +1357,16 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                 // Introduction card
                 _buildIntroCard(),
                 SizedBox(height: 24),
-                
+
                 _buildSectionTitle('Personal Information'),
                 SizedBox(height: 16),
-                
+
                 // Patient type selection
                 _buildSectionSubtitle('Are you new to Panchakarma?'),
                 SizedBox(height: 8),
                 _buildPatientTypeSelector(),
                 SizedBox(height: 16),
-                
+
                 // Patient name
                 _buildTextField(
                   controller: _nameController,
@@ -1387,7 +1379,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   },
                 ),
                 SizedBox(height: 16),
-                
+
                 // Row for age and gender
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1428,7 +1420,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   ],
                 ),
                 SizedBox(height: 16),
-                
+
                 // Contact info - email and phone
                 _buildTextField(
                   controller: _emailController,
@@ -1445,7 +1437,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   },
                 ),
                 SizedBox(height: 16),
-                
+
                 _buildTextField(
                   controller: _phoneController,
                   labelText: 'Phone Number',
@@ -1458,16 +1450,18 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   },
                 ),
                 SizedBox(height: 24),
-                
+
                 _buildSectionTitle('Health Condition'),
                 SizedBox(height: 16),
-                
+
                 // Condition selection
-                _buildSectionSubtitle('What condition are you seeking help with?'),
+                _buildSectionSubtitle(
+                  'What condition are you seeking help with?',
+                ),
                 SizedBox(height: 8),
                 _buildConditionSelector(),
                 SizedBox(height: 16),
-                
+
                 // Additional condition details if "Other" is selected
                 if (_selectedCondition == 'Other (Please specify)')
                   Column(
@@ -1477,7 +1471,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                         controller: _conditionController,
                         labelText: 'Please specify your condition',
                         validator: (value) {
-                          if (_selectedCondition == 'Other (Please specify)' && 
+                          if (_selectedCondition == 'Other (Please specify)' &&
                               (value == null || value.isEmpty)) {
                             return 'Please describe your condition';
                           }
@@ -1487,12 +1481,13 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                       SizedBox(height: 16),
                     ],
                   ),
-                
+
                 // Detailed description
                 _buildTextField(
                   controller: _descriptionController,
                   labelText: 'Describe your condition in detail',
-                  hintText: 'Include symptoms, duration, and any previous treatments',
+                  hintText:
+                      'Include symptoms, duration, and any previous treatments',
                   maxLines: 4,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -1505,7 +1500,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   },
                 ),
                 SizedBox(height: 24),
-                
+
                 // PDF upload section (commented out for future use)
                 _buildSectionTitle('Medical Reports'),
                 SizedBox(height: 8),
@@ -1514,7 +1509,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   fontSize: 14,
                 ),
                 SizedBox(height: 8),
-                
+
                 // PDF upload button (commented out for future use)
                 Container(
                   width: double.infinity,
@@ -1526,11 +1521,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.upload_file,
-                        size: 40,
-                        color: Colors.grey,
-                      ),
+                      Icon(Icons.upload_file, size: 40, color: Colors.grey),
                       SizedBox(height: 8),
                       Text(
                         'Upload PDF Reports',
@@ -1542,25 +1533,24 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                       SizedBox(height: 4),
                       Text(
                         'Feature coming soon',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontSize: 12,
-                        ),
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
                       ),
                       // IMPORTANT: PDF upload functionality is commented out for future implementation
                     ],
                   ),
                 ),
                 SizedBox(height: 24),
-                
+
                 // Preferred specialization
                 _buildSectionTitle('Treatment Preferences'),
                 SizedBox(height: 16),
-                _buildSectionSubtitle('Preferred treatment specializations (optional)'),
+                _buildSectionSubtitle(
+                  'Preferred treatment specializations (optional)',
+                ),
                 SizedBox(height: 8),
                 _buildSpecializationSelector(),
                 SizedBox(height: 16),
-                
+
                 // Preferred date
                 _buildSectionSubtitle('Preferred date for consultation'),
                 SizedBox(height: 8),
@@ -1576,7 +1566,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                     ),
                   ),
                 ),
-                
+
                 SizedBox(height: 32),
                 // Submit button
                 SizedBox(
@@ -1600,8 +1590,13 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                        : Text('Submit Request',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        : Text(
+                            'Submit Request',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 SizedBox(height: 24),
@@ -1612,7 +1607,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildIntroCard() {
     return Card(
       margin: EdgeInsets.zero,
@@ -1622,11 +1617,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Icon(
-              Icons.spa_outlined,
-              size: 48,
-              color: primaryGreen,
-            ),
+            Icon(Icons.spa_outlined, size: 48, color: primaryGreen),
             SizedBox(height: 8),
             Text(
               'Request a Consultation',
@@ -1640,16 +1631,14 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
             Text(
               'Fill out this form to request a consultation with one of our Ayurvedic practitioners. We will match you with the most suitable practitioner based on your needs.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.grey[700],
-              ),
+              style: TextStyle(color: Colors.grey[700]),
             ),
           ],
         ),
       ),
     );
   }
-  
+
   Widget _buildSectionTitle(String title) {
     return Text(
       title,
@@ -1660,7 +1649,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildSectionSubtitle(String subtitle, {double fontSize = 15}) {
     return Text(
       subtitle,
@@ -1671,7 +1660,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildTextField({
     TextEditingController? controller,
     String? labelText,
@@ -1686,7 +1675,9 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       decoration: InputDecoration(
         labelText: labelText,
         hintText: hintText,
-        suffixIcon: suffixIcon != null ? Icon(suffixIcon, color: primaryGreen) : null,
+        suffixIcon: suffixIcon != null
+            ? Icon(suffixIcon, color: primaryGreen)
+            : null,
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
@@ -1703,7 +1694,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       validator: validator,
     );
   }
-  
+
   Widget _buildDropdown<T>({
     required T value,
     required String labelText,
@@ -1726,15 +1717,12 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
         ),
       ),
       items: items.map<DropdownMenuItem<T>>((T value) {
-        return DropdownMenuItem<T>(
-          value: value,
-          child: Text(value.toString()),
-        );
+        return DropdownMenuItem<T>(value: value, child: Text(value.toString()));
       }).toList(),
       onChanged: onChanged,
     );
   }
-  
+
   Widget _buildPatientTypeSelector() {
     return Container(
       decoration: BoxDecoration(
@@ -1755,7 +1743,8 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
             child: _buildSelectionTile(
               title: 'Returning Patient',
               isSelected: _selectedPatientType == 'Returning Patient',
-              onTap: () => setState(() => _selectedPatientType = 'Returning Patient'),
+              onTap: () =>
+                  setState(() => _selectedPatientType = 'Returning Patient'),
               icon: Icons.person_outlined,
             ),
           ),
@@ -1763,7 +1752,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildSelectionTile({
     required String title,
     required bool isSelected,
@@ -1802,7 +1791,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildConditionSelector() {
     return Container(
       decoration: BoxDecoration(
@@ -1827,7 +1816,7 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       ),
     );
   }
-  
+
   Widget _buildSpecializationSelector() {
     return Container(
       decoration: BoxDecoration(
@@ -1838,7 +1827,9 @@ class _ConsultationRequestScreenState extends State<ConsultationRequestScreen> {
       child: Wrap(
         spacing: 8,
         children: _specializations.map((specialization) {
-          final bool isSelected = _selectedSpecializations.contains(specialization);
+          final bool isSelected = _selectedSpecializations.contains(
+            specialization,
+          );
           return FilterChip(
             label: Text(specialization),
             selected: isSelected,

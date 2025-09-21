@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,7 +19,8 @@ class AppointmentsScreen extends StatefulWidget {
   _AppointmentsScreenState createState() => _AppointmentsScreenState();
 }
 
-class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTickerProviderStateMixin {
+class _AppointmentsScreenState extends State<AppointmentsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -64,18 +65,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
             unselectedLabelColor: Colors.white70,
             labelStyle: TextStyle(fontWeight: FontWeight.bold),
             tabs: [
-              Tab(
-                icon: Icon(Icons.upcoming),
-                text: 'Upcoming',
-              ),
-              Tab(
-                icon: Icon(Icons.history),
-                text: 'Completed',
-              ),
-              Tab(
-                icon: Icon(Icons.cancel_outlined),
-                text: 'Cancelled',
-              ),
+              Tab(icon: Icon(Icons.upcoming), text: 'Upcoming'),
+              Tab(icon: Icon(Icons.history), text: 'Completed'),
+              Tab(icon: Icon(Icons.cancel_outlined), text: 'Cancelled'),
             ],
           ),
           actions: [
@@ -90,9 +82,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
         body: TabBarView(
           controller: _tabController,
           children: [
-            _buildAppointmentsList('confirmed'), // Upcoming confirmed appointments
+            _buildAppointmentsList(
+              'confirmed',
+            ), // Upcoming confirmed appointments
             _buildAppointmentsList('completed'), // Completed appointments
-            _buildAppointmentsList('rejected'),  // Cancelled/Rejected appointments
+            _buildAppointmentsList(
+              'rejected',
+            ), // Cancelled/Rejected appointments
           ],
         ),
       ),
@@ -194,11 +190,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
               color: AppColors.cardGreen,
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              icon,
-              size: 60,
-              color: AppColors.primaryGreen,
-            ),
+            child: Icon(icon, size: 60, color: AppColors.primaryGreen),
           ),
           SizedBox(height: 24),
           Text(
@@ -212,10 +204,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
           SizedBox(height: 8),
           Text(
             message,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             textAlign: TextAlign.center,
           ),
         ],
@@ -233,7 +222,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
     final confirmedTime = data['confirmedTime'] ?? '';
     final phoneNumber = data['phoneNumber'] ?? '';
     final treatmentPlan = data['treatmentPlan'] as Map<String, dynamic>?;
-    
+
     DateTime? appointmentDateTime;
     if (confirmedDate != null) {
       appointmentDateTime = confirmedDate.toDate();
@@ -254,12 +243,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
             offset: Offset(0, 4),
           ),
         ],
-        border: Border(
-          left: BorderSide(
-            color: statusColor,
-            width: 5,
-          ),
-        ),
+        border: Border(left: BorderSide(color: statusColor, width: 5)),
       ),
       child: Padding(
         padding: EdgeInsets.all(20),
@@ -281,8 +265,11 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                               color: AppColors.cardGreen,
                               borderRadius: BorderRadius.circular(8),
                             ),
-                            child: Icon(Icons.person,
-                              color: AppColors.primaryGreen, size: 20),
+                            child: Icon(
+                              Icons.person,
+                              color: AppColors.primaryGreen,
+                              size: 20,
+                            ),
                           ),
                           SizedBox(width: 12),
                           Expanded(
@@ -337,9 +324,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                 ),
               ],
             ),
-            
+
             SizedBox(height: 16),
-            
+
             // Appointment details
             if (appointmentDateTime != null) ...[
               _buildInfoRow(
@@ -349,37 +336,29 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
               ),
               SizedBox(height: 8),
             ],
-            
+
             if (confirmedTime.isNotEmpty) ...[
-              _buildInfoRow(
-                Icons.access_time,
-                'Time',
-                confirmedTime,
-              ),
+              _buildInfoRow(Icons.access_time, 'Time', confirmedTime),
               SizedBox(height: 8),
             ],
-            
+
             _buildInfoRow(
               Icons.health_and_safety,
               'Health Condition',
               healthCondition,
             ),
-            
+
             if (phoneNumber.isNotEmpty) ...[
               SizedBox(height: 8),
-              _buildInfoRow(
-                Icons.phone,
-                'Contact',
-                phoneNumber,
-              ),
+              _buildInfoRow(Icons.phone, 'Contact', phoneNumber),
             ],
-            
+
             // Treatment plan section
             if (treatmentPlan != null) ...[
               SizedBox(height: 16),
               _buildTreatmentPlanSection(treatmentPlan),
             ],
-            
+
             // Action buttons
             SizedBox(height: 20),
             _buildActionButtons(data),
@@ -405,10 +384,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              color: AppColors.darkGreen,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.darkGreen, fontSize: 14),
           ),
         ),
       ],
@@ -441,23 +417,29 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
             ],
           ),
           SizedBox(height: 12),
-          
+
           if (treatmentPlan['treatmentType'] != null) ...[
-            _buildTreatmentDetail('Treatment Type', treatmentPlan['treatmentType']),
+            _buildTreatmentDetail(
+              'Treatment Type',
+              treatmentPlan['treatmentType'],
+            ),
           ],
-          
+
           if (treatmentPlan['duration'] != null) ...[
-            _buildTreatmentDetail('Duration', '${treatmentPlan['duration']} days'),
+            _buildTreatmentDetail(
+              'Duration',
+              '${treatmentPlan['duration']} days',
+            ),
           ],
-          
+
           if (treatmentPlan['description'] != null) ...[
             _buildTreatmentDetail('Description', treatmentPlan['description']),
           ],
-          
+
           if (treatmentPlan['dietPlan'] != null) ...[
             _buildTreatmentDetail('Diet Plan', treatmentPlan['dietPlan']),
           ],
-          
+
           if (treatmentPlan['medicines'] != null) ...[
             _buildTreatmentDetail('Medicines', treatmentPlan['medicines']),
           ],
@@ -483,10 +465,7 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
           SizedBox(height: 2),
           Text(
             value,
-            style: TextStyle(
-              color: AppColors.darkGreen,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: AppColors.darkGreen, fontSize: 14),
           ),
         ],
       ),
@@ -514,7 +493,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                   ),
                 ),
                 icon: Icon(Icons.medical_services, size: 18),
-                label: Text('Add Treatment Plan', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  'Add Treatment Plan',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ] else ...[
@@ -530,7 +512,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                   ),
                 ),
                 icon: Icon(Icons.edit, size: 18),
-                label: Text('Edit Treatment', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  'Edit Treatment',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
             SizedBox(width: 12),
@@ -546,10 +531,13 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
                   ),
                 ),
                 icon: Icon(Icons.check_circle, size: 18),
-                label: Text('Complete', style: TextStyle(fontWeight: FontWeight.w600)),
+                label: Text(
+                  'Complete',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ]
+          ],
         ],
       );
     } else {
@@ -571,7 +559,9 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
               ),
               SizedBox(width: 8),
               Text(
-                status == 'completed' ? 'Treatment Completed' : 'Appointment Cancelled',
+                status == 'completed'
+                    ? 'Treatment Completed'
+                    : 'Appointment Cancelled',
                 style: TextStyle(
                   color: AppColors.darkGreen,
                   fontWeight: FontWeight.w600,
@@ -612,7 +602,10 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> with SingleTick
     }
   }
 
-  void _showTreatmentPlanDialog(String appointmentId, Map<String, dynamic> data) {
+  void _showTreatmentPlanDialog(
+    String appointmentId,
+    Map<String, dynamic> data,
+  ) {
     // Treatment plan dialog implementation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(

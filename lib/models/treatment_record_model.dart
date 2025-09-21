@@ -11,7 +11,7 @@ class TreatmentRecordModel {
   final double? patientFeedbackScore; // 1-5 rating
   final String? patientFeedbackNotes;
   final double? healthImprovementScore; // 1-10 scale measuring improvement
-  
+
   // Additional fields for progress tracking
   final String? treatmentType;
   final DateTime? date;
@@ -44,7 +44,7 @@ class TreatmentRecordModel {
     } else {
       treatmentDate = DateTime.now(); // Fallback
     }
-    
+
     DateTime? date;
     if (json['date'] is Timestamp) {
       date = (json['date'] as Timestamp).toDate();

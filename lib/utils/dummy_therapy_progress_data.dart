@@ -13,7 +13,8 @@ class DummyTherapyProgressData {
         completedSessions: 4,
         startDate: DateTime.now().subtract(const Duration(days: 10)),
         progressPercentage: 57.1,
-        profileImageUrl: 'https://xsgames.co/randomusers/assets/avatars/male/46.jpg',
+        profileImageUrl:
+            'https://xsgames.co/randomusers/assets/avatars/male/46.jpg',
       ),
       TherapyProgressModel(
         id: '2',
@@ -25,7 +26,8 @@ class DummyTherapyProgressData {
         completedSessions: 3,
         startDate: DateTime.now().subtract(const Duration(days: 7)),
         progressPercentage: 60.0,
-        profileImageUrl: 'https://xsgames.co/randomusers/assets/avatars/female/31.jpg',
+        profileImageUrl:
+            'https://xsgames.co/randomusers/assets/avatars/female/31.jpg',
       ),
       TherapyProgressModel(
         id: '3',
@@ -38,7 +40,8 @@ class DummyTherapyProgressData {
         startDate: DateTime.now().subtract(const Duration(days: 15)),
         endDate: DateTime.now().subtract(const Duration(days: 2)),
         progressPercentage: 100.0,
-        profileImageUrl: 'https://xsgames.co/randomusers/assets/avatars/male/22.jpg',
+        profileImageUrl:
+            'https://xsgames.co/randomusers/assets/avatars/male/22.jpg',
       ),
       TherapyProgressModel(
         id: '4',
@@ -50,7 +53,8 @@ class DummyTherapyProgressData {
         completedSessions: 0,
         startDate: DateTime.now().add(const Duration(days: 2)),
         progressPercentage: 0.0,
-        profileImageUrl: 'https://xsgames.co/randomusers/assets/avatars/female/45.jpg',
+        profileImageUrl:
+            'https://xsgames.co/randomusers/assets/avatars/female/45.jpg',
       ),
       TherapyProgressModel(
         id: '5',
@@ -63,7 +67,8 @@ class DummyTherapyProgressData {
         startDate: DateTime.now().subtract(const Duration(days: 4)),
         progressPercentage: 25.0,
         notes: 'Patient reported feeling better after second session',
-        profileImageUrl: 'https://xsgames.co/randomusers/assets/avatars/male/67.jpg',
+        profileImageUrl:
+            'https://xsgames.co/randomusers/assets/avatars/male/67.jpg',
       ),
     ];
   }

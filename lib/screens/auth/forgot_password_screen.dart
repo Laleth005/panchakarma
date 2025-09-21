@@ -13,7 +13,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+
   bool _isLoading = false;
   String? _message;
   bool _isSuccess = false;
@@ -26,27 +26,30 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _message = null;
     });
-    
+
     try {
       // Use our simplified password reset method
       await _authService.resetPassword(_emailController.text.trim());
-      
+
       setState(() {
         _isLoading = false;
         _isSuccess = true;
-        _message = 'Password reset initiated. Please check your email for instructions, or contact support for assistance.';
+        _message =
+            'Password reset initiated. Please check your email for instructions, or contact support for assistance.';
       });
     } on FirebaseAuthException catch (e) {
-      print('FirebaseAuthException in _resetPassword: ${e.code} - ${e.message}');
+      print(
+        'FirebaseAuthException in _resetPassword: ${e.code} - ${e.message}',
+      );
       setState(() {
         _isLoading = false;
         _isSuccess = false;
-        
+
         switch (e.code) {
           case 'user-not-found':
             _message = 'No user found with this email address.';
@@ -55,15 +58,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             _message = 'Please enter a valid email address.';
             break;
           case 'reset-failed':
-            _message = 'Password reset request has been received. Please contact support to get your new temporary password.';
+            _message =
+                'Password reset request has been received. Please contact support to get your new temporary password.';
             _isSuccess = true; // Show as success since we've logged the request
             break;
           default:
             if (e.message?.contains('CONFIGURATION_NOT_FOUND') ?? false) {
-              _message = 'Password reset request has been received. Please contact support to get your new temporary password.';
-              _isSuccess = true; // Show as success since we've logged the request
+              _message =
+                  'Password reset request has been received. Please contact support to get your new temporary password.';
+              _isSuccess =
+                  true; // Show as success since we've logged the request
             } else {
-              _message = 'Error: ${e.message ?? "An error occurred. Please try again."}';
+              _message =
+                  'Error: ${e.message ?? "An error occurred. Please try again."}';
             }
         }
       });
@@ -72,7 +79,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       setState(() {
         _isLoading = false;
         _isSuccess = false;
-        _message = 'An unexpected error occurred. Please try again or contact support.';
+        _message =
+            'An unexpected error occurred. Please try again or contact support.';
       });
     }
   }
@@ -106,20 +114,20 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               SizedBox(height: 16),
               Text(
                 'Enter your email address and we\'ll send you a link to reset your password.',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black87,
-                ),
+                style: TextStyle(fontSize: 16, color: Colors.black87),
               ),
               SizedBox(height: 30),
-              
+
               // Email field
               TextFormField(
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
                   labelText: 'Email Address',
-                  prefixIcon: Icon(Icons.email_outlined, color: Color(0xFF2E7D32)),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    color: Color(0xFF2E7D32),
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -132,15 +140,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                 ),
                 validator: (value) {
                   if (value?.isEmpty == true) return 'Email is required';
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                  if (!RegExp(
+                    r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                  ).hasMatch(value!)) {
                     return 'Enter a valid email';
                   }
                   return null;
                 },
               ),
-              
+
               SizedBox(height: 20),
-              
+
               // Message display
               if (_message != null)
                 Container(
@@ -159,7 +169,9 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       Text(
                         _message!,
                         style: TextStyle(
-                          color: _isSuccess ? Colors.green[700] : Colors.red[700],
+                          color: _isSuccess
+                              ? Colors.green[700]
+                              : Colors.red[700],
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -176,9 +188,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('1. ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '1. ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             Expanded(
-                              child: Text('Check your email inbox for reset instructions'),
+                              child: Text(
+                                'Check your email inbox for reset instructions',
+                              ),
                             ),
                           ],
                         ),
@@ -186,9 +203,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('2. ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '2. ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             Expanded(
-                              child: Text('If no email arrives within 5 minutes, check your spam folder'),
+                              child: Text(
+                                'If no email arrives within 5 minutes, check your spam folder',
+                              ),
                             ),
                           ],
                         ),
@@ -196,9 +218,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('3. ', style: TextStyle(fontWeight: FontWeight.bold)),
+                            Text(
+                              '3. ',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             Expanded(
-                              child: Text('If you still don\'t see it, contact our support team'),
+                              child: Text(
+                                'If you still don\'t see it, contact our support team',
+                              ),
                             ),
                           ],
                         ),
@@ -214,7 +241,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ],
                   ),
                 ),
-              
+
               // Submit button
               SizedBox(height: 10),
               SizedBox(
@@ -229,7 +256,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     ),
                   ),
                   child: _isLoading
-                      ? CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                      ? CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        )
                       : Text(
                           'Reset Password',
                           style: TextStyle(

@@ -6,7 +6,8 @@ import '../../services/auth_service.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   final PractitionerModel practitioner;
-  final String? patientId; // Optional patient ID to use when Firebase Auth fails
+  final String?
+  patientId; // Optional patient ID to use when Firebase Auth fails
 
   const BookAppointmentScreen({
     Key? key,
@@ -20,10 +21,10 @@ class BookAppointmentScreen extends StatefulWidget {
 
 class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   final AuthService _authService = AuthService();
-  
+
   DateTime _selectedDate = DateTime.now().add(Duration(days: 1));
   TimeOfDay _selectedTime = TimeOfDay(hour: 10, minute: 0);
-  
+
   String? _selectedSpecialty;
   List<String> _availableTimeSlots = [];
   bool _isLoading = false;
@@ -32,12 +33,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
   void initState() {
     super.initState();
     // Initialize the selected specialty with the first specialty from the practitioner
-    if (widget.practitioner.specialties != null && widget.practitioner.specialties!.isNotEmpty) {
+    if (widget.practitioner.specialties != null &&
+        widget.practitioner.specialties!.isNotEmpty) {
       _selectedSpecialty = widget.practitioner.specialties!.first;
     } else {
       _selectedSpecialty = 'General Consultation';
     }
-    
+
     // Calculate available time slots
     _calculateAvailableTimeSlots();
   }
@@ -71,7 +73,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
@@ -94,7 +96,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         );
       },
     );
-    
+
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
@@ -112,18 +114,18 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       String? patientId;
       String patientName = 'Patient';
       String patientEmail = '';
-      
+
       // First try from widget parameter
       if (widget.patientId != null && widget.patientId!.isNotEmpty) {
         patientId = widget.patientId;
-        
+
         // Try to get patient details from Firestore
         try {
           final patientDoc = await FirebaseFirestore.instance
               .collection('patients')
               .doc(patientId)
               .get();
-              
+
           if (patientDoc.exists) {
             final data = patientDoc.data()!;
             patientName = data['fullName'] ?? 'Patient';
@@ -133,7 +135,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           print("Error loading patient details: $e");
         }
       }
-      
+
       // If not found, try Firebase Auth
       if (patientId == null) {
         final currentUser = _authService.currentUser;
@@ -143,22 +145,25 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           patientEmail = currentUser.email ?? '';
         }
       }
-      
+
       // If still not found, use a generated ID as last resort
       if (patientId == null) {
         // For demo purposes - in production you'd want proper authentication
         patientId = 'patient-${DateTime.now().millisecondsSinceEpoch}';
-        
+
         // Create a temporary patient entry
-        await FirebaseFirestore.instance.collection('patients').doc(patientId).set({
-          'uid': patientId,
-          'email': 'guest@example.com',
-          'fullName': 'Guest Patient',
-          'role': 'patient',
-          'createdAt': FieldValue.serverTimestamp(),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        
+        await FirebaseFirestore.instance
+            .collection('patients')
+            .doc(patientId)
+            .set({
+              'uid': patientId,
+              'email': 'guest@example.com',
+              'fullName': 'Guest Patient',
+              'role': 'patient',
+              'createdAt': FieldValue.serverTimestamp(),
+              'updatedAt': FieldValue.serverTimestamp(),
+            });
+
         patientName = 'Guest Patient';
         patientEmail = 'guest@example.com';
       }
@@ -171,7 +176,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         _selectedTime.hour,
         _selectedTime.minute,
       );
-      
+
       // Create appointment data with standardized fields to ensure consistent querying
       final appointmentData = {
         'patientId': patientId,
@@ -181,22 +186,26 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         'patientEmail': patientEmail,
         // Store dates in multiple formats to ensure compatibility with existing queries
         'appointmentDate': appointmentDateTime, // Timestamp for UI display
-        'dateTime': appointmentDateTime,      // Alias used by some queries
-        'date': appointmentDateTime,          // Simple date field for basic queries
-        'dateStr': DateFormat('yyyy-MM-dd').format(appointmentDateTime), // String date for text-based filtering
-        'formattedDate': DateFormat('EEEE, MMMM d, yyyy').format(appointmentDateTime), // For UI display
+        'dateTime': appointmentDateTime, // Alias used by some queries
+        'date': appointmentDateTime, // Simple date field for basic queries
+        'dateStr': DateFormat(
+          'yyyy-MM-dd',
+        ).format(appointmentDateTime), // String date for text-based filtering
+        'formattedDate': DateFormat(
+          'EEEE, MMMM d, yyyy',
+        ).format(appointmentDateTime), // For UI display
         'time': '${_selectedTime.format(context)}',
         'therapyType': _selectedSpecialty ?? 'General Consultation',
         'status': 'scheduled',
         'notes': '',
         'createdAt': FieldValue.serverTimestamp(),
       };
-      
+
       // Save to Firestore
       final appointmentRef = await FirebaseFirestore.instance
           .collection('appointments')
           .add(appointmentData);
-      
+
       // Store the current patient ID in session data for future reference
       try {
         await FirebaseFirestore.instance
@@ -210,7 +219,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       } catch (e) {
         print('Error storing session data: $e');
       }
-      
+
       // Log appointment data for debugging
       print("Appointment booked successfully with data:");
       print("Patient ID: $patientId");
@@ -218,7 +227,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       print("Appointment ID: ${appointmentRef.id}");
       print("Date: ${DateFormat('yyyy-MM-dd').format(appointmentDateTime)}");
       print("Time: ${_selectedTime.format(context)}");
-      
+
       // Show success message and navigate back
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -227,12 +236,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
           duration: Duration(seconds: 3),
         ),
       );
-      
+
       // Allow some time for data to sync before popping
       Future.delayed(Duration(milliseconds: 500), () {
-        if (mounted) Navigator.of(context).pop(true); // Return true to indicate success
+        if (mounted)
+          Navigator.of(context).pop(true); // Return true to indicate success
       });
-      
     } catch (e) {
       print('Error booking appointment: $e');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -242,7 +251,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
         ),
       );
     }
-    
+
     setState(() {
       _isLoading = false;
     });
@@ -285,11 +294,12 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                       fit: BoxFit.cover,
                                       width: 60,
                                       height: 60,
-                                      errorBuilder: (context, error, stackTrace) => Icon(
-                                        Icons.person,
-                                        size: 30,
-                                        color: Color(0xFF2E7D32),
-                                      ),
+                                      errorBuilder:
+                                          (context, error, stackTrace) => Icon(
+                                            Icons.person,
+                                            size: 30,
+                                            color: Color(0xFF2E7D32),
+                                          ),
                                     ),
                                   )
                                 : Icon(
@@ -314,22 +324,40 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                                 Wrap(
                                   spacing: 4,
                                   runSpacing: 4,
-                                  children: widget.practitioner.specialties == null || widget.practitioner.specialties!.isEmpty
+                                  children:
+                                      widget.practitioner.specialties == null ||
+                                          widget
+                                              .practitioner
+                                              .specialties!
+                                              .isEmpty
                                       ? [
                                           Chip(
-                                            label: Text('Ayurvedic Practitioner'),
-                                            backgroundColor: Colors.green.withOpacity(0.1),
-                                            labelStyle: TextStyle(color: Colors.green[800]),
-                                          )
+                                            label: Text(
+                                              'Ayurvedic Practitioner',
+                                            ),
+                                            backgroundColor: Colors.green
+                                                .withOpacity(0.1),
+                                            labelStyle: TextStyle(
+                                              color: Colors.green[800],
+                                            ),
+                                          ),
                                         ]
-                                      : widget.practitioner.specialties!.map((specialty) {
+                                      : widget.practitioner.specialties!.map((
+                                          specialty,
+                                        ) {
                                           return Chip(
                                             label: Text(specialty),
-                                            backgroundColor: Colors.green.withOpacity(0.1),
-                                            labelStyle: TextStyle(color: Colors.green[800]),
-                                            visualDensity: VisualDensity.compact,
+                                            backgroundColor: Colors.green
+                                                .withOpacity(0.1),
+                                            labelStyle: TextStyle(
+                                              color: Colors.green[800],
+                                            ),
+                                            visualDensity:
+                                                VisualDensity.compact,
                                             padding: EdgeInsets.zero,
-                                            labelPadding: EdgeInsets.symmetric(horizontal: 8),
+                                            labelPadding: EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                            ),
                                           );
                                         }).toList(),
                                 ),
@@ -341,14 +369,11 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                     ),
                   ),
                   SizedBox(height: 24),
-                  
+
                   // Specialty selection
                   Text(
                     'Select Therapy Type',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   Container(
@@ -362,7 +387,7 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                         isExpanded: true,
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         items: [
-                          ...(widget.practitioner.specialties != null 
+                          ...(widget.practitioner.specialties != null
                               ? widget.practitioner.specialties!.map(
                                   (specialty) => DropdownMenuItem<String>(
                                     value: specialty,
@@ -383,16 +408,13 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Date selection
                   Text(
                     'Select Date',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   InkWell(
@@ -405,34 +427,27 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.calendar_today,
-                            color: Color(0xFF2E7D32),
-                          ),
+                          Icon(Icons.calendar_today, color: Color(0xFF2E7D32)),
                           SizedBox(width: 8),
                           Text(
-                            DateFormat('EEEE, MMMM d, yyyy').format(_selectedDate),
+                            DateFormat(
+                              'EEEE, MMMM d, yyyy',
+                            ).format(_selectedDate),
                             style: TextStyle(fontSize: 16),
                           ),
                           Spacer(),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: Color(0xFF2E7D32),
-                          ),
+                          Icon(Icons.arrow_drop_down, color: Color(0xFF2E7D32)),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // Time selection
                   Text(
                     'Select Time',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 8),
                   InkWell(
@@ -445,27 +460,21 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            Icons.access_time,
-                            color: Color(0xFF2E7D32),
-                          ),
+                          Icon(Icons.access_time, color: Color(0xFF2E7D32)),
                           SizedBox(width: 8),
                           Text(
                             _selectedTime.format(context),
                             style: TextStyle(fontSize: 16),
                           ),
                           Spacer(),
-                          Icon(
-                            Icons.arrow_drop_down,
-                            color: Color(0xFF2E7D32),
-                          ),
+                          Icon(Icons.arrow_drop_down, color: Color(0xFF2E7D32)),
                         ],
                       ),
                     ),
                   ),
-                  
+
                   SizedBox(height: 32),
-                  
+
                   // Book button
                   SizedBox(
                     width: double.infinity,

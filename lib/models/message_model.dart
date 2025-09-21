@@ -9,7 +9,7 @@ class MessageModel {
   final DateTime timestamp;
   final bool isRead;
   final String? imageUrl; // Optional image attachment
-  final String? fileUrl;  // Optional file attachment
+  final String? fileUrl; // Optional file attachment
   final String? fileName; // Name of attached file if any
 
   MessageModel({

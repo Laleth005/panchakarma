@@ -24,18 +24,13 @@ class _PatientsScreenState extends State<PatientsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Patients',
-          style: TextStyle(color: Colors.white),
-        ),
+        title: Text('Patients', style: TextStyle(color: Colors.white)),
         backgroundColor: Color(0xFF2E7D32),
       ),
       body: Column(
         children: [
           _buildSearchBar(),
-          Expanded(
-            child: _buildPatientsList(),
-          ),
+          Expanded(child: _buildPatientsList()),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -92,7 +87,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
         }
 
         final patients = snapshot.data?.docs ?? [];
-        
+
         // Filter patients based on search query
         final filteredPatients = _searchQuery.isEmpty
             ? patients
@@ -100,10 +95,11 @@ class _PatientsScreenState extends State<PatientsScreen> {
                 final data = doc.data() as Map<String, dynamic>;
                 final name = (data['fullName'] as String?)?.toLowerCase() ?? '';
                 final email = (data['email'] as String?)?.toLowerCase() ?? '';
-                final phone = (data['phoneNumber'] as String?)?.toLowerCase() ?? '';
-                return name.contains(_searchQuery) || 
-                       email.contains(_searchQuery) || 
-                       phone.contains(_searchQuery);
+                final phone =
+                    (data['phoneNumber'] as String?)?.toLowerCase() ?? '';
+                return name.contains(_searchQuery) ||
+                    email.contains(_searchQuery) ||
+                    phone.contains(_searchQuery);
               }).toList();
 
         if (filteredPatients.isEmpty) {
@@ -114,7 +110,8 @@ class _PatientsScreenState extends State<PatientsScreen> {
           padding: EdgeInsets.all(16),
           itemCount: filteredPatients.length,
           itemBuilder: (context, index) {
-            final patientData = filteredPatients[index].data() as Map<String, dynamic>;
+            final patientData =
+                filteredPatients[index].data() as Map<String, dynamic>;
             return _buildPatientCard(
               patientData['fullName'] ?? 'Unknown Patient',
               patientData['email'] ?? 'No email',
@@ -133,20 +130,13 @@ class _PatientsScreenState extends State<PatientsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.people_outline,
-            size: 80,
-            color: Colors.grey.shade400,
-          ),
+          Icon(Icons.people_outline, size: 80, color: Colors.grey.shade400),
           SizedBox(height: 16),
           Text(
-            _searchQuery.isEmpty 
-                ? 'No patients found' 
+            _searchQuery.isEmpty
+                ? 'No patients found'
                 : 'No patients matching "$_searchQuery"',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey.shade600,
-            ),
+            style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           SizedBox(height: 24),
           if (_searchQuery.isEmpty)
@@ -176,9 +166,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: () {
           // Navigate to patient details screen
@@ -242,13 +230,18 @@ class _PatientsScreenState extends State<PatientsScreen> {
                 ),
               ),
               IconButton(
-                icon: Icon(Icons.arrow_forward_ios, size: 16, color: Color(0xFF2E7D32)),
+                icon: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 16,
+                  color: Color(0xFF2E7D32),
+                ),
                 onPressed: () {
                   // Navigate to patient details screen
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => PatientDetailScreen(patientId: patientId),
+                      builder: (context) =>
+                          PatientDetailScreen(patientId: patientId),
                     ),
                   );
                 },
@@ -262,10 +255,7 @@ class _PatientsScreenState extends State<PatientsScreen> {
 
   Widget _buildPatientAvatar(String name, String? imageUrl) {
     if (imageUrl != null && imageUrl.isNotEmpty) {
-      return CircleAvatar(
-        radius: 25,
-        backgroundImage: NetworkImage(imageUrl),
-      );
+      return CircleAvatar(radius: 25, backgroundImage: NetworkImage(imageUrl));
     } else {
       return CircleAvatar(
         radius: 25,

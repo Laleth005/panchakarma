@@ -4,22 +4,22 @@ import 'appointments_screen.dart';
 import 'slots_page.dart';
 import 'practitioner_profile_screen.dart';
 import 'practitioner_home_screen.dart';
+import 'consultations_screen.dart';
 
 class PractitionerMainDashboard extends StatefulWidget {
   final String practitionerId;
-  
-  const PractitionerMainDashboard({
-    Key? key,
-    required this.practitionerId,
-  }) : super(key: key);
+
+  const PractitionerMainDashboard({Key? key, required this.practitionerId})
+    : super(key: key);
 
   @override
-  _PractitionerMainDashboardState createState() => _PractitionerMainDashboardState();
+  _PractitionerMainDashboardState createState() =>
+      _PractitionerMainDashboardState();
 }
 
 class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
   int _selectedIndex = 0;
-  
+
   // Ayurvedic Green theme
   static const Color primaryGreen = Color(0xFF2E7D32);
 
@@ -45,10 +45,7 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _pages,
-      ),
+      body: IndexedStack(index: _selectedIndex, children: _pages),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
@@ -71,8 +68,14 @@ class _PractitionerMainDashboardState extends State<PractitionerMainDashboard> {
           type: BottomNavigationBarType.fixed,
           backgroundColor: Colors.white,
           elevation: 0,
-          selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-          unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w500, fontSize: 11),
+          selectedLabelStyle: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 12,
+          ),
+          unselectedLabelStyle: TextStyle(
+            fontWeight: FontWeight.w500,
+            fontSize: 11,
+          ),
           items: [
             BottomNavigationBarItem(
               icon: Icon(Icons.dashboard_outlined),

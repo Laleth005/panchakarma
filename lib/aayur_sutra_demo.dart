@@ -9,18 +9,16 @@ import 'screens/practitioner/practitioner_home_dashboard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Set preferred orientations
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-  
+
   // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const AayurSutraApp());
 }
 
@@ -77,9 +75,7 @@ class AayurSutraApp extends StatelessWidget {
           ),
         ),
         textButtonTheme: TextButtonThemeData(
-          style: TextButton.styleFrom(
-            foregroundColor: Color(0xFF2E7D32),
-          ),
+          style: TextButton.styleFrom(foregroundColor: Color(0xFF2E7D32)),
         ),
         scaffoldBackgroundColor: Colors.grey.shade100,
         appBarTheme: AppBarTheme(

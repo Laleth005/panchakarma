@@ -5,32 +5,35 @@ import '../../models/practitioner_model.dart';
 
 class PractitionerSettingsScreen extends StatefulWidget {
   final String? practitionerId;
-  
-  const PractitionerSettingsScreen({Key? key, this.practitionerId}) : super(key: key);
+
+  const PractitionerSettingsScreen({Key? key, this.practitionerId})
+    : super(key: key);
 
   @override
-  _PractitionerSettingsScreenState createState() => _PractitionerSettingsScreenState();
+  _PractitionerSettingsScreenState createState() =>
+      _PractitionerSettingsScreenState();
 }
 
-class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen> {
+class _PractitionerSettingsScreenState
+    extends State<PractitionerSettingsScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
   PractitionerModel? _practitionerData;
-  
+
   // Settings flags
   bool _enableNotifications = true;
   bool _enableEmailAlerts = true;
   bool _enableDarkMode = false;
   bool _enableAutoLogout = false;
-  
+
   // Display preferences
   String _preferredDateFormat = 'DD/MM/YYYY';
   String _preferredTimeFormat = '12-hour';
   String _preferredLanguage = 'English';
-  
+
   // Session settings
   int _defaultSessionDuration = 60; // minutes
 
@@ -50,7 +53,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
 
     try {
       String? practitionerId = widget.practitionerId;
-      
+
       if (practitionerId == null) {
         // Try to get from Firebase Auth if not provided
         final User? currentUser = _auth.currentUser;
@@ -88,16 +91,19 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
 
       if (settingsDoc != null && settingsDoc.exists) {
         final settingsData = settingsDoc.data() as Map<String, dynamic>;
-        
+
         setState(() {
           _enableNotifications = settingsData['enableNotifications'] ?? true;
           _enableEmailAlerts = settingsData['enableEmailAlerts'] ?? true;
           _enableDarkMode = settingsData['enableDarkMode'] ?? false;
           _enableAutoLogout = settingsData['enableAutoLogout'] ?? false;
-          _preferredDateFormat = settingsData['preferredDateFormat'] ?? 'DD/MM/YYYY';
-          _preferredTimeFormat = settingsData['preferredTimeFormat'] ?? '12-hour';
+          _preferredDateFormat =
+              settingsData['preferredDateFormat'] ?? 'DD/MM/YYYY';
+          _preferredTimeFormat =
+              settingsData['preferredTimeFormat'] ?? '12-hour';
           _preferredLanguage = settingsData['preferredLanguage'] ?? 'English';
-          _defaultSessionDuration = settingsData['defaultSessionDuration'] ?? 60;
+          _defaultSessionDuration =
+              settingsData['defaultSessionDuration'] ?? 60;
         });
       }
 
@@ -121,7 +127,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
 
     try {
       String? practitionerId = widget.practitionerId;
-      
+
       if (practitionerId == null) {
         // Try to get from Firebase Auth if not provided
         final User? currentUser = _auth.currentUser;
@@ -166,7 +172,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
       setState(() {
         _isLoading = false;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error saving settings: $e'),
@@ -192,24 +198,24 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _hasError
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Error loading settings: $_errorMessage',
-                        style: const TextStyle(color: Colors.red),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 20),
-                      ElevatedButton(
-                        onPressed: _loadPractitionerSettings,
-                        child: const Text('Retry'),
-                      ),
-                    ],
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Error loading settings: $_errorMessage',
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
                   ),
-                )
-              : _buildSettingsForm(),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: _loadPractitionerSettings,
+                    child: const Text('Retry'),
+                  ),
+                ],
+              ),
+            )
+          : _buildSettingsForm(),
     );
   }
 
@@ -241,7 +247,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             },
           ),
           const Divider(),
-          
+
           _buildSectionHeader('Display Preferences'),
           _buildSettingSwitch(
             'Dark Mode',
@@ -287,7 +293,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             },
           ),
           const Divider(),
-          
+
           _buildSectionHeader('Session Settings'),
           _buildSliderSetting(
             'Default Session Duration',
@@ -304,7 +310,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             '${_defaultSessionDuration.toString()} minutes',
           ),
           const Divider(),
-          
+
           _buildSectionHeader('Security'),
           _buildSettingSwitch(
             'Auto Logout',
@@ -317,7 +323,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             },
           ),
           const Divider(),
-          
+
           _buildSectionHeader('Account'),
           ListTile(
             title: const Text('Change Password'),
@@ -330,7 +336,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             },
           ),
           const Divider(),
-          
+
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
@@ -353,15 +359,17 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
       padding: const EdgeInsets.symmetric(vertical: 16.0),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
+        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
       ),
     );
   }
 
-  Widget _buildSettingSwitch(String title, String description, bool value, Function(bool) onChanged) {
+  Widget _buildSettingSwitch(
+    String title,
+    String description,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
@@ -382,7 +390,13 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
     );
   }
 
-  Widget _buildDropdownSetting(String title, String description, String value, List<String> options, Function(String?) onChanged) {
+  Widget _buildDropdownSetting(
+    String title,
+    String description,
+    String value,
+    List<String> options,
+    Function(String?) onChanged,
+  ) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: ListTile(
@@ -401,7 +415,10 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
             DropdownButtonFormField<String>(
               value: value,
               decoration: InputDecoration(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8.0),
                 ),
@@ -421,12 +438,12 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
   }
 
   Widget _buildSliderSetting(
-    String title, 
-    String description, 
-    double value, 
-    double min, 
-    double max, 
-    double divisions, 
+    String title,
+    String description,
+    double value,
+    double min,
+    double max,
+    double divisions,
     Function(double) onChanged,
     String valueLabel,
   ) {
@@ -476,10 +493,12 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
   }
 
   void _showChangePasswordDialog() {
-    final TextEditingController currentPasswordController = TextEditingController();
+    final TextEditingController currentPasswordController =
+        TextEditingController();
     final TextEditingController newPasswordController = TextEditingController();
-    final TextEditingController confirmPasswordController = TextEditingController();
-    
+    final TextEditingController confirmPasswordController =
+        TextEditingController();
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -498,9 +517,7 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
               const SizedBox(height: 16),
               TextField(
                 controller: newPasswordController,
-                decoration: const InputDecoration(
-                  labelText: 'New Password',
-                ),
+                decoration: const InputDecoration(labelText: 'New Password'),
                 obscureText: true,
               ),
               const SizedBox(height: 16),
@@ -523,30 +540,31 @@ class _PractitionerSettingsScreenState extends State<PractitionerSettingsScreen>
           ),
           TextButton(
             onPressed: () async {
-              if (newPasswordController.text != confirmPasswordController.text) {
+              if (newPasswordController.text !=
+                  confirmPasswordController.text) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Passwords do not match')),
                 );
                 return;
               }
-              
+
               try {
                 User? user = _auth.currentUser;
-                
+
                 if (user != null) {
                   // Re-authenticate user
                   AuthCredential credential = EmailAuthProvider.credential(
                     email: user.email!,
                     password: currentPasswordController.text,
                   );
-                  
+
                   await user.reauthenticateWithCredential(credential);
-                  
+
                   // Change password
                   await user.updatePassword(newPasswordController.text);
-                  
+
                   Navigator.of(context).pop();
-                  
+
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('Password updated successfully'),

@@ -5,10 +5,7 @@ import '../models/therapy_progress_model.dart';
 class TherapyProgressDetailDialog extends StatelessWidget {
   final TherapyProgressModel therapy;
 
-  const TherapyProgressDetailDialog({
-    required this.therapy,
-    super.key,
-  });
+  const TherapyProgressDetailDialog({required this.therapy, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -41,9 +38,9 @@ class TherapyProgressDetailDialog extends StatelessWidget {
       children: [
         Text(
           'Therapy Progress Details',
-          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         IconButton(
           icon: const Icon(Icons.close),
@@ -85,10 +82,7 @@ class TherapyProgressDetailDialog extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 'Patient ID: ${therapy.patientId}',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -105,22 +99,13 @@ class TherapyProgressDetailDialog extends StatelessWidget {
       children: [
         const Text(
           'Therapy Details',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         _buildDetailRow('Therapy Type', therapy.therapyName),
-        _buildDetailRow(
-          'Start Date',
-          dateFormat.format(therapy.startDate),
-        ),
+        _buildDetailRow('Start Date', dateFormat.format(therapy.startDate)),
         if (therapy.endDate != null)
-          _buildDetailRow(
-            'End Date',
-            dateFormat.format(therapy.endDate!),
-          ),
+          _buildDetailRow('End Date', dateFormat.format(therapy.endDate!)),
         _buildDetailRow(
           'Progress',
           '${therapy.progressPercentage.toStringAsFixed(1)}%',
@@ -149,12 +134,7 @@ class TherapyProgressDetailDialog extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 14),
-            ),
-          ),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 14))),
         ],
       ),
     );
@@ -166,10 +146,7 @@ class TherapyProgressDetailDialog extends StatelessWidget {
       children: [
         const Text(
           'Sessions Progress',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 12),
         ClipRRect(

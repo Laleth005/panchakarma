@@ -18,7 +18,7 @@ class PatientConsultingScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16),
-          
+
           // Search Box
           Container(
             decoration: BoxDecoration(
@@ -42,7 +42,7 @@ class PatientConsultingScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 24),
-          
+
           // Filter Chips
           Wrap(
             spacing: 8,
@@ -90,7 +90,7 @@ class PatientConsultingScreen extends StatelessWidget {
             ],
           ),
           SizedBox(height: 24),
-          
+
           // Practitioner List
           Text(
             'Available Practitioners',
@@ -101,7 +101,7 @@ class PatientConsultingScreen extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16),
-          
+
           // Empty State
           Center(
             child: Column(
@@ -125,9 +125,7 @@ class PatientConsultingScreen extends StatelessWidget {
                 SizedBox(height: 8),
                 Text(
                   'Practitioners will be available soon',
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(color: Colors.grey.shade600),
                 ),
                 SizedBox(height: 24),
                 ElevatedButton(

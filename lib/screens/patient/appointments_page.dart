@@ -1,53 +1,126 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-// Green Theme Colors
-class AppColors {
-  static const Color primaryGreen = Color(0xFF2E7D32);
-  static const Color lightGreen = Color(0xFF4CAF50);
-  static const Color darkGreen = Color(0xFF1B5E20);
-  static const Color accentGreen = Color(0xFF66BB6A);
-  static const Color backgroundGreen = Color(0xFFF1F8E9);
-  static const Color cardGreen = Color(0xFFE8F5E8);
-}
-
-// Placeholder FeedbackPage class - you can replace this with your actual implementation
-class FeedbackPage extends StatelessWidget {
-  final Map<String, dynamic> appointmentData;
-  
-  const FeedbackPage({Key? key, required this.appointmentData}) : super(key: key);
-  
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Feedback'),
-        backgroundColor: AppColors.primaryGreen,
-      ),
-      body: Center(
-        child: Text('Feedback page for appointment'),
-      ),
-    );
-  }
-}
+import 'package:intl/intl.dart';
 
 class PatientAppointmentsPage extends StatefulWidget {
-  const PatientAppointmentsPage({Key? key}) : super(key: key);
+  final String? patientId;
+
+  const PatientAppointmentsPage({Key? key, this.patientId}) : super(key: key);
 
   @override
-  _PatientAppointmentsPageState createState() => _PatientAppointmentsPageState();
+  _PatientAppointmentsPageState createState() =>
+      _PatientAppointmentsPageState();
 }
 
 class _PatientAppointmentsPageState extends State<PatientAppointmentsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final String? currentPatientId = FirebaseAuth.instance.currentUser?.uid;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  // Green theme colors
+  static const Color primaryGreen = Color(0xFF2E7D32);
+  static const Color backgroundGreen = Color(0xFFF1F8E9);
+
+  Map<String, dynamic>? _patientData;
+  bool _isLoadingPatient = true;
+  String? _currentPatientId;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
+    _determinePatientId();
+  }
+
+  Future<void> _determinePatientId() async {
+    try {
+      // Use provided patientId or try to get current user
+      _currentPatientId = widget.patientId;
+
+      if (_currentPatientId == null || _currentPatientId!.isEmpty) {
+        // Try to get from Firebase Auth current user
+        final user = FirebaseAuth.instance.currentUser;
+        if (user != null) {
+          _currentPatientId = user.uid;
+        }
+      }
+
+      if (_currentPatientId != null) {
+        await _loadPatientData();
+      } else {
+        setState(() {
+          _isLoadingPatient = false;
+        });
+      }
+    } catch (e) {
+      print('Error determining patient ID: $e');
+      setState(() {
+        _isLoadingPatient = false;
+      });
+    }
+  }
+
+  Future<void> _loadPatientData() async {
+    if (_currentPatientId == null) return;
+
+    try {
+      setState(() {
+        _isLoadingPatient = true;
+      });
+
+      // Try patients collection first
+      DocumentSnapshot patientDoc = await _firestore
+          .collection('patients')
+          .doc(_currentPatientId!)
+          .get();
+
+      if (patientDoc.exists) {
+        Map<String, dynamic> data = patientDoc.data() as Map<String, dynamic>;
+        setState(() {
+          _patientData = {
+            'name': data['fullName'] ?? data['name'] ?? 'Patient',
+            'email': data['email'] ?? '',
+            'phone': data['phoneNumber'] ?? data['phone'] ?? '',
+            'profileImage': data['profileImageUrl'] ?? data['profileImage'],
+          };
+          _isLoadingPatient = false;
+        });
+        return;
+      }
+
+      // Try users collection if not found in patients
+      DocumentSnapshot userDoc = await _firestore
+          .collection('users')
+          .doc(_currentPatientId!)
+          .get();
+
+      if (userDoc.exists) {
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+        setState(() {
+          _patientData = {
+            'name': data['fullName'] ?? data['name'] ?? 'Patient',
+            'email': data['email'] ?? '',
+            'phone': data['phoneNumber'] ?? data['phone'] ?? '',
+            'profileImage': data['profileImageUrl'] ?? data['profileImage'],
+          };
+          _isLoadingPatient = false;
+        });
+        return;
+      }
+
+      // If not found in either collection
+      setState(() {
+        _patientData = null;
+        _isLoadingPatient = false;
+      });
+    } catch (e) {
+      print('Error loading patient data: $e');
+      setState(() {
+        _patientData = null;
+        _isLoadingPatient = false;
+      });
+    }
   }
 
   @override
@@ -58,660 +131,133 @@ class _PatientAppointmentsPageState extends State<PatientAppointmentsPage>
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: Theme.of(context).copyWith(
-        primaryColor: AppColors.primaryGreen,
-        colorScheme: ColorScheme.light(
-          primary: AppColors.primaryGreen,
-          secondary: AppColors.accentGreen,
+    return Scaffold(
+      backgroundColor: backgroundGreen,
+      appBar: AppBar(
+        title: Text(
+          'My Appointments',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-        appBarTheme: AppBarTheme(
-          backgroundColor: AppColors.primaryGreen,
-          foregroundColor: Colors.white,
-        ),
-      ),
-      child: Scaffold(
-        backgroundColor: AppColors.backgroundGreen,
-        appBar: AppBar(
-          title: Text('My Appointments',
-            style: TextStyle(fontWeight: FontWeight.bold)),
-          elevation: 4,
-          shadowColor: AppColors.primaryGreen.withOpacity(0.3),
-          actions: [
-            IconButton(
-              icon: Icon(Icons.refresh),
-              onPressed: () {
-                setState(() {}); // Trigger rebuild to refresh data
-              },
-            ),
-          ],
-          bottom: TabBar(
-            controller: _tabController,
-            indicatorColor: Colors.white,
-            indicatorWeight: 3,
-            labelStyle: TextStyle(fontWeight: FontWeight.bold),
-            unselectedLabelStyle: TextStyle(fontWeight: FontWeight.normal),
-            tabs: [
-              Tab(
-                icon: Icon(Icons.upcoming),
-                text: 'Upcoming',
-              ),
-              Tab(
-                icon: Icon(Icons.history),
-                text: 'Past',
-              ),
-            ],
-          ),
-        ),
-        body: TabBarView(
-          controller: _tabController,
-          children: [
-            _buildUpcomingAppointments(),
-            _buildPastAppointments(),
-          ],
-        ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {
-            Navigator.pushNamed(context, '/consultation_form');
-          },
-          backgroundColor: AppColors.primaryGreen,
-          foregroundColor: Colors.white,
-          icon: Icon(Icons.add),
-          label: Text('New Request'),
-          elevation: 4,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildUpcomingAppointments() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientId', isEqualTo: currentPatientId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
-            ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorWidget('Error loading appointments');
-        }
-
-        final appointments = snapshot.data?.docs ?? [];
-        
-        // Filter for upcoming appointments (pending, confirmed)
-        final upcomingAppointments = appointments.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          final status = data['status'] ?? '';
-          return status == 'pending' || status == 'confirmed';
-        }).toList();
-        
-        // Sort by createdAt descending
-        upcomingAppointments.sort((a, b) {
-          final aData = a.data() as Map<String, dynamic>;
-          final bData = b.data() as Map<String, dynamic>;
-          final aCreated = aData['createdAt'] as Timestamp?;
-          final bCreated = bData['createdAt'] as Timestamp?;
-          if (aCreated == null && bCreated == null) return 0;
-          if (aCreated == null) return 1;
-          if (bCreated == null) return -1;
-          return bCreated.compareTo(aCreated);
-        });
-
-        if (upcomingAppointments.isEmpty) {
-          return _buildEmptyState(
-            icon: Icons.calendar_month_outlined,
-            title: 'No Upcoming Appointments',
-            message: 'You don\'t have any upcoming appointments.\nTap the + button to request a consultation.',
-          );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.all(16),
-          itemCount: upcomingAppointments.length,
-          itemBuilder: (context, index) {
-            final appointment = upcomingAppointments[index];
-            final data = appointment.data() as Map<String, dynamic>;
-            data['id'] = appointment.id;
-            return _buildUpcomingAppointmentCard(data);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildPastAppointments() {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('appointments')
-          .where('patientId', isEqualTo: currentPatientId)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
-            ),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return _buildErrorWidget('Error loading past appointments');
-        }
-
-        final appointments = snapshot.data?.docs ?? [];
-        
-        // Filter for past appointments (completed, rejected, cancelled)
-        final pastAppointments = appointments.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          final status = data['status'] ?? '';
-          return status == 'completed' || status == 'rejected' || status == 'cancelled';
-        }).toList();
-        
-        // Sort by updatedAt descending
-        pastAppointments.sort((a, b) {
-          final aData = a.data() as Map<String, dynamic>;
-          final bData = b.data() as Map<String, dynamic>;
-          final aUpdated = aData['updatedAt'] as Timestamp?;
-          final bUpdated = bData['updatedAt'] as Timestamp?;
-          if (aUpdated == null && bUpdated == null) return 0;
-          if (aUpdated == null) return 1;
-          if (bUpdated == null) return -1;
-          return bUpdated.compareTo(aUpdated);
-        });
-
-        if (pastAppointments.isEmpty) {
-          return _buildEmptyState(
-            icon: Icons.history,
-            title: 'No Past Appointments',
-            message: 'You don\'t have any past appointments yet.\nCompleted consultations will appear here.',
-          );
-        }
-
-        return ListView.builder(
-          padding: EdgeInsets.all(16),
-          itemCount: pastAppointments.length,
-          itemBuilder: (context, index) {
-            final appointment = pastAppointments[index];
-            final data = appointment.data() as Map<String, dynamic>;
-            data['id'] = appointment.id;
-            return _buildPastAppointmentCard(data);
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildUpcomingAppointmentCard(Map<String, dynamic> data) {
-    final status = data['status'] ?? 'pending';
-    final healthCondition = data['healthCondition'] ?? 'Not specified';
-    final practitionerName = data['practitionerName'] ?? 'Practitioner';
-    final createdAt = data['createdAt'] as Timestamp?;
-    final confirmedDate = data['confirmedDate'] as Timestamp?;
-    final confirmedTime = data['confirmedTime'] ?? '';
-    final preferredDate = data['preferredDate'] as Timestamp?;
-    final preferredTime = data['preferredTime'] ?? '';
-
-    Color statusColor = _getStatusColor(status);
-    IconData statusIcon = _getStatusIcon(status);
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border(
-          left: BorderSide(
-            color: statusColor,
-            width: 4,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header with status and condition
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: AppColors.cardGreen,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Icon(Icons.health_and_safety,
-                              color: AppColors.primaryGreen, size: 20),
-                          ),
-                          SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              healthCondition,
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                color: AppColors.darkGreen,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, color: statusColor, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        status.toUpperCase(),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-           
-            SizedBox(height: 16),
-           
-            // Appointment details based on status
-            if (status == 'confirmed' && confirmedDate != null) ...[
-              _buildConfirmedAppointmentDetails(confirmedDate, confirmedTime, practitionerName),
-            ] else if (status == 'pending') ...[
-              _buildPendingAppointmentDetails(preferredDate, preferredTime),
-            ],
-           
-            SizedBox(height: 16),
-           
-            // Action buttons
-            _buildUpcomingActionButtons(data),
-           
-            // Request date
-            if (createdAt != null) ...[
-              SizedBox(height: 12),
-              Text(
-                'Requested on ${_formatDate(createdAt.toDate())}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPastAppointmentCard(Map<String, dynamic> data) {
-    final status = data['status'] ?? 'completed';
-    final healthCondition = data['healthCondition'] ?? 'Not specified';
-    final practitionerName = data['practitionerName'] ?? 'Practitioner';
-    final completedAt = data['completedAt'] as Timestamp?;
-    final confirmedDate = data['confirmedDate'] as Timestamp?;
-    final confirmedTime = data['confirmedTime'] ?? '';
-
-    Color statusColor = _getStatusColor(status);
-    IconData statusIcon = _getStatusIcon(status);
-
-    return Container(
-      margin: EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.primaryGreen.withOpacity(0.1),
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-        border: Border(
-          left: BorderSide(
-            color: statusColor,
-            width: 4,
-          ),
-        ),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.cardGreen,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(Icons.health_and_safety,
-                          color: AppColors.primaryGreen, size: 20),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          healthCondition,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: AppColors.darkGreen,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: statusColor, width: 1),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(statusIcon, color: statusColor, size: 16),
-                      SizedBox(width: 4),
-                      Text(
-                        status.toUpperCase(),
-                        style: TextStyle(
-                          color: statusColor,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-           
-            SizedBox(height: 16),
-           
-            // Appointment details
-            if (status == 'completed' && confirmedDate != null) ...[
-              _buildCompletedAppointmentDetails(confirmedDate, confirmedTime, practitionerName),
-            ] else if (status == 'rejected') ...[
-              _buildRejectedAppointmentDetails(),
-            ],
-           
-            SizedBox(height: 16),
-           
-            // Action buttons for past appointments
-            _buildPastActionButtons(data),
-           
-            // Completion date
-            if (completedAt != null) ...[
-              SizedBox(height: 12),
-              Text(
-                'Completed on ${_formatDate(completedAt.toDate())}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[500],
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConfirmedAppointmentDetails(Timestamp confirmedDate, String confirmedTime, String practitionerName) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.cardGreen, AppColors.backgroundGreen],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.accentGreen.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Row(
+        backgroundColor: primaryGreen,
+        elevation: 0,
+        iconTheme: IconThemeData(color: Colors.white),
+        bottom: PreferredSize(
+          preferredSize: Size.fromHeight(120),
+          child: Column(
             children: [
-              Icon(Icons.check_circle, color: AppColors.primaryGreen, size: 24),
-              SizedBox(width: 12),
-              Text(
-                'Appointment Confirmed!',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.darkGreen,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.calendar_today,
-                  'Date',
-                  _formatDate(confirmedDate.toDate()),
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.access_time,
-                  'Time',
-                  confirmedTime,
-                ),
-              ),
-            ],
-          ),
-          if (practitionerName != 'Practitioner') ...[
-            SizedBox(height: 8),
-            _buildDetailItem(
-              Icons.person,
-              'Practitioner',
-              practitionerName,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPendingAppointmentDetails(Timestamp? preferredDate, String preferredTime) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.orange.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.schedule, color: Colors.orange, size: 24),
-              SizedBox(width: 12),
-              Text(
-                'Waiting for Confirmation',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade700,
-                  fontSize: 16,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Text(
-            'A practitioner will review your request and confirm the appointment with exact date and time.',
-            style: TextStyle(
-              color: Colors.orange.shade600,
-              fontSize: 14,
-              height: 1.4,
-            ),
-          ),
-          if (preferredDate != null) ...[
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildDetailItem(
-                    Icons.calendar_today_outlined,
-                    'Preferred Date',
-                    _formatDate(preferredDate.toDate()),
-                  ),
-                ),
-                if (preferredTime.isNotEmpty) ...[
-                  SizedBox(width: 16),
-                  Expanded(
-                    child: _buildDetailItem(
-                      Icons.access_time_outlined,
-                      'Preferred Time',
-                      preferredTime,
-                    ),
-                  ),
+              _buildPatientHeader(),
+              TabBar(
+                controller: _tabController,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.green.shade200,
+                indicatorColor: Colors.white,
+                indicatorWeight: 3,
+                labelStyle: TextStyle(fontWeight: FontWeight.w600),
+                tabs: [
+                  Tab(text: 'Upcoming'),
+                  Tab(text: 'Completed'),
+                  Tab(text: 'Cancelled'),
                 ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      body: _isLoadingPatient
+          ? _buildLoadingState()
+          : _patientData == null
+          ? _buildPatientNotFoundState()
+          : TabBarView(
+              controller: _tabController,
+              children: [
+                _buildAppointmentsList('upcoming'),
+                _buildAppointmentsList('completed'),
+                _buildAppointmentsList('cancelled'),
               ],
             ),
-          ],
-        ],
-      ),
     );
   }
 
-  Widget _buildCompletedAppointmentDetails(Timestamp confirmedDate, String confirmedTime, String practitionerName) {
-    return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.blue.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.blue.withOpacity(0.3)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.check_circle, color: Colors.blue, size: 24),
-              SizedBox(width: 12),
-              Text(
-                'Consultation Completed',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade700,
-                  fontSize: 16,
-                ),
+  Widget _buildPatientHeader() {
+    if (_isLoadingPatient) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.green.shade100,
+              child: CircularProgressIndicator(
+                color: primaryGreen,
+                strokeWidth: 2,
               ),
-            ],
-          ),
-          SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.calendar_today,
-                  'Date',
-                  _formatDate(confirmedDate.toDate()),
-                ),
-              ),
-              SizedBox(width: 16),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.access_time,
-                  'Time',
-                  confirmedTime,
-                ),
-              ),
-            ],
-          ),
-          if (practitionerName != 'Practitioner') ...[
-            SizedBox(height: 8),
-            _buildDetailItem(
-              Icons.person,
-              'Practitioner',
-              practitionerName,
+            ),
+            SizedBox(width: 12),
+            Text(
+              'Loading patient details...',
+              style: TextStyle(color: Colors.white),
             ),
           ],
-        ],
-      ),
-    );
-  }
+        ),
+      );
+    }
 
-  Widget _buildRejectedAppointmentDetails() {
+    if (_patientData == null) {
+      return Container(
+        padding: EdgeInsets.all(16),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.red.shade100,
+              child: Icon(Icons.error, color: Colors.red),
+            ),
+            SizedBox(width: 12),
+            Text('Patient not found', style: TextStyle(color: Colors.white)),
+          ],
+        ),
+      );
+    }
+
     return Container(
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.red.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.red.withOpacity(0.3)),
-      ),
+      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
         children: [
-          Icon(Icons.cancel_outlined, color: Colors.red, size: 24),
+          CircleAvatar(
+            radius: 25,
+            backgroundColor: Colors.green.shade100,
+            backgroundImage:
+                (_patientData!['profileImage'] != null &&
+                    _patientData!['profileImage']!.isNotEmpty)
+                ? NetworkImage(_patientData!['profileImage']!)
+                : null,
+            child:
+                (_patientData!['profileImage'] == null ||
+                    _patientData!['profileImage']!.isEmpty)
+                ? Icon(Icons.person, color: primaryGreen, size: 25)
+                : null,
+          ),
           SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Request Not Approved',
+                  _patientData!['name'] ?? 'Patient',
                   style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.red.shade700,
+                    color: Colors.white,
                     fontSize: 16,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                SizedBox(height: 4),
-                Text(
-                  'Unfortunately, this consultation request was not approved. You can submit a new request anytime.',
-                  style: TextStyle(
-                    color: Colors.red.shade600,
-                    fontSize: 14,
-                    height: 1.4,
+                if (_patientData!['email']?.isNotEmpty == true)
+                  Text(
+                    _patientData!['email']!,
+                    style: TextStyle(
+                      color: Colors.green.shade100,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -720,624 +266,405 @@ class _PatientAppointmentsPageState extends State<PatientAppointmentsPage>
     );
   }
 
-  Widget _buildDetailItem(IconData icon, String label, String value) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.primaryGreen, size: 16),
-        SizedBox(width: 6),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.darkGreen,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUpcomingActionButtons(Map<String, dynamic> data) {
-    final status = data['status'] ?? 'pending';
-
-    if (status == 'confirmed') {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _cancelAppointment(data['id']),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red),
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.cancel_outlined, size: 18),
-              label: Text('Cancel', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _showAppointmentDetails(data),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryGreen,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.info_outline, size: 18),
-              label: Text('Details', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      );
-    } else if (status == 'pending') {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _cancelAppointment(data['id']),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.red,
-                side: BorderSide(color: Colors.red),
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.cancel_outlined, size: 18),
-              label: Text('Cancel Request', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showAppointmentDetails(data),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGreen,
-                side: BorderSide(color: AppColors.primaryGreen),
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.info_outline, size: 18),
-              label: Text('Details', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return SizedBox.shrink();
-    }
-  }
-
-  Widget _buildPastActionButtons(Map<String, dynamic> data) {
-    final status = data['status'] ?? 'completed';
-
-    if (status == 'completed') {
-      return Row(
-        children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _showAppointmentDetails(data),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primaryGreen,
-                side: BorderSide(color: AppColors.primaryGreen),
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.info_outline, size: 18),
-              label: Text('View Details', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _navigateToFeedbackPage(data),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.lightGreen,
-                foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              icon: Icon(Icons.feedback_outlined, size: 18),
-              label: Text('Feedback', style: TextStyle(fontWeight: FontWeight.w600)),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return OutlinedButton.icon(
-        onPressed: () => _showAppointmentDetails(data),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.primaryGreen,
-          side: BorderSide(color: AppColors.primaryGreen),
-          padding: EdgeInsets.symmetric(vertical: 12),
-          minimumSize: Size(double.infinity, 0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-        icon: Icon(Icons.info_outline, size: 18),
-        label: Text('View Details', style: TextStyle(fontWeight: FontWeight.w600)),
-      );
-    }
-  }
-
-  Widget _buildEmptyState({required IconData icon, required String title, required String message}) {
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.cardGreen,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                icon,
-                size: 60,
-                color: AppColors.primaryGreen,
-              ),
-            ),
-            SizedBox(height: 24),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: AppColors.darkGreen,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 16),
-            Text(
-              message,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-                height: 1.5,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget(String message) {
+  Widget _buildLoadingState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 60, color: Colors.red),
+          CircularProgressIndicator(color: primaryGreen, strokeWidth: 3),
           SizedBox(height: 16),
           Text(
-            message,
-            style: TextStyle(fontSize: 16, color: Colors.red),
+            'Loading appointments...',
+            style: TextStyle(
+              color: primaryGreen,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPatientNotFoundState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.person_off, size: 80, color: Colors.grey.shade400),
+          SizedBox(height: 16),
+          Text(
+            'Patient not found',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey.shade700,
+            ),
           ),
           SizedBox(height: 8),
           Text(
-            'Please try again later',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
+            'Unable to load patient details',
+            style: TextStyle(color: Colors.grey.shade600),
           ),
-          SizedBox(height: 16),
+          SizedBox(height: 24),
           ElevatedButton(
-            onPressed: () => setState(() {}),
-            child: Text('Retry'),
+            onPressed: _loadPatientData,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryGreen,
+              backgroundColor: primaryGreen,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
+            child: Text('Retry'),
           ),
         ],
       ),
     );
   }
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'confirmed':
-        return AppColors.primaryGreen;
+  Widget _buildAppointmentsList(String type) {
+    if (_currentPatientId == null) {
+      return Center(
+        child: Text(
+          'No patient ID available',
+          style: TextStyle(color: Colors.grey.shade600),
+        ),
+      );
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: _getAppointmentsStream(type),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator(color: primaryGreen));
+        }
+
+        if (snapshot.hasError) {
+          return _buildErrorState(snapshot.error.toString(), type);
+        }
+
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _buildEmptyState(type);
+        }
+
+        final appointments = snapshot.data!.docs;
+
+        return ListView.builder(
+          padding: EdgeInsets.all(16),
+          itemCount: appointments.length,
+          itemBuilder: (context, index) {
+            return _buildAppointmentCard(appointments[index], type);
+          },
+        );
+      },
+    );
+  }
+
+  Stream<QuerySnapshot> _getAppointmentsStream(String type) {
+    // Simplified queries to avoid composite index requirements
+    Query baseQuery = _firestore
+        .collection('consultations')
+        .where('patientId', isEqualTo: _currentPatientId);
+
+    switch (type) {
+      case 'upcoming':
+        // Simple status-based query for confirmed appointments
+        return baseQuery.where('status', isEqualTo: 'confirmed').snapshots();
+
       case 'completed':
-        return Colors.blue;
+        // Simple status-based query for completed appointments
+        return baseQuery.where('status', isEqualTo: 'completed').snapshots();
+
       case 'cancelled':
-      case 'rejected':
-        return Colors.red;
+        // Simple status-based query for cancelled appointments
+        return baseQuery.where('status', isEqualTo: 'cancelled').snapshots();
+
       default:
-        return Colors.grey;
+        return Stream.empty();
     }
   }
 
-  IconData _getStatusIcon(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Icons.schedule;
-      case 'confirmed':
-        return Icons.check_circle_outline;
-      case 'completed':
-        return Icons.check_circle;
-      case 'cancelled':
-      case 'rejected':
-        return Icons.cancel_outlined;
-      default:
-        return Icons.help_outline;
-    }
-  }
+  Widget _buildAppointmentCard(DocumentSnapshot doc, String type) {
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>? ?? {};
 
-  String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
-  }
-
-  void _showAppointmentDetails(Map<String, dynamic> data) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Container(
-                padding: EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.cardGreen,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(Icons.info_outline, color: AppColors.primaryGreen, size: 20),
-              ),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Appointment Details',
-                  style: TextStyle(
-                    color: AppColors.darkGreen,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Card(
+      margin: EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: primaryGreen.withOpacity(0.1)),
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildDetailRow('Condition', data['healthCondition'] ?? 'Not specified'),
-                _buildDetailRow('Status', (data['status'] ?? 'pending').toUpperCase()),
-                if (data['practitionerName'] != null)
-                  _buildDetailRow('Practitioner', data['practitionerName']),
-                if (data['confirmedDate'] != null) ...[
-                  _buildDetailRow('Date', _formatDate((data['confirmedDate'] as Timestamp).toDate())),
-                  _buildDetailRow('Time', data['confirmedTime'] ?? 'Not specified'),
-                ],
-                if (data['conditionDescription'] != null && data['conditionDescription'].isNotEmpty)
-                  _buildDetailRow('Description', data['conditionDescription'], multiline: true),
-                if (data['panchakarmaExperience'] != null)
-                  _buildDetailRow('Experience', data['panchakarmaExperience']),
-                if (data['additionalNotes'] != null && data['additionalNotes'].isNotEmpty)
-                  _buildDetailRow('Notes', data['additionalNotes'], multiline: true),
+                _buildStatusChip(data['status'] ?? 'unknown'),
+                Text(
+                  _formatDate(data['createdAt']),
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 12),
+                ),
               ],
             ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('Close'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.primaryGreen,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildDetailRow(String label, String value, {bool multiline = false}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: AppColors.primaryGreen,
-              fontSize: 14,
-            ),
-          ),
-          SizedBox(height: 4),
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundGreen,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                color: AppColors.darkGreen,
-                fontSize: 14,
-                height: multiline ? 1.4 : 1.2,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _cancelAppointment(String appointmentId) async {
-    final bool? shouldCancel = await showDialog<bool>(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Text(
-            'Cancel Appointment',
-            style: TextStyle(color: AppColors.darkGreen),
-          ),
-          content: Text(
-            'Are you sure you want to cancel this appointment?',
-            style: TextStyle(color: Colors.grey[700]),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: Text('Keep'),
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.grey[600],
-              ),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.of(context).pop(true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (shouldCancel == true) {
-      try {
-        await FirebaseFirestore.instance
-            .collection('appointments')
-            .doc(appointmentId)
-            .update({
-          'status': 'cancelled',
-          'cancelledAt': Timestamp.now(),
-          'updatedAt': Timestamp.now(),
-        });
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Appointment cancelled successfully'),
-            backgroundColor: AppColors.primaryGreen,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      } catch (e) {
-        print('Error cancelling appointment: $e');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error cancelling appointment. Please try again.'),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 3),
-          ),
-        );
-      }
-    }
-  }
-
-  void _navigateToFeedbackPage(Map<String, dynamic> appointmentData) {
-    _showFeedbackDialog(appointmentData);
-  }
-
-  void _showFeedbackDialog(Map<String, dynamic> appointmentData) {
-    TextEditingController feedbackController = TextEditingController();
-    int rating = 5;
-
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            title: Row(
+            SizedBox(height: 12),
+            Row(
               children: [
-                Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardGreen,
-                    borderRadius: BorderRadius.circular(8),
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: primaryGreen.withOpacity(0.1),
+                  child: Icon(
+                    Icons.medical_services,
+                    color: primaryGreen,
+                    size: 20,
                   ),
-                  child: Icon(Icons.feedback_outlined, color: AppColors.primaryGreen, size: 20),
                 ),
                 SizedBox(width: 12),
                 Expanded(
-                  child: Text(
-                    'Consultation Feedback',
-                    style: TextStyle(
-                      color: AppColors.darkGreen,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data['practitionerName'] ?? 'Dr. Practitioner',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      Text(
+                        data['consultationType'] ?? 'General Consultation',
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(height: 12),
+            if (data['symptoms']?.isNotEmpty == true) ...[
+              Text(
+                'Symptoms: ${data['symptoms']}',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SizedBox(height: 8),
+            ],
+            if (data['confirmedDate'] != null) ...[
+              Row(
                 children: [
+                  Icon(Icons.schedule, color: primaryGreen, size: 16),
+                  SizedBox(width: 4),
                   Text(
-                    'How was your consultation experience?',
+                    'Scheduled: ${_formatDateTime(data['confirmedDate'])}',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.darkGreen,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Rating',
-                    style: TextStyle(
+                      color: primaryGreen,
                       fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(5, (index) {
-                      return GestureDetector(
-                        onTap: () {
-                          setDialogState(() {
-                            rating = index + 1;
-                          });
-                        },
-                        child: Icon(
-                          Icons.star,
-                          color: index < rating ? Colors.amber : Colors.grey[300],
-                          size: 32,
-                        ),
-                      );
-                    }),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Comments (Optional)',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.primaryGreen,
-                    ),
-                  ),
-                  SizedBox(height: 8),
-                  TextField(
-                    controller: feedbackController,
-                    maxLines: 4,
-                    decoration: InputDecoration(
-                      hintText: 'Share your experience, suggestions, or any concerns...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: AppColors.accentGreen),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: AppColors.primaryGreen, width: 2),
-                      ),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: Text('Cancel'),
-                style: TextButton.styleFrom(
-                  foregroundColor: Colors.grey[600],
-                ),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  _submitFeedback(appointmentData['id'], rating, feedbackController.text);
-                  Navigator.of(context).pop();
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryGreen,
-                  foregroundColor: Colors.white,
-                ),
-                child: Text('Submit Feedback'),
-              ),
             ],
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
-  Future<void> _submitFeedback(String appointmentId, int rating, String comments) async {
+  Widget _buildStatusChip(String status) {
+    Color chipColor;
+    Color textColor;
+    IconData icon;
+
+    switch (status.toLowerCase()) {
+      case 'confirmed':
+        chipColor = Colors.blue.shade100;
+        textColor = Colors.blue.shade700;
+        icon = Icons.check_circle;
+        break;
+      case 'completed':
+        chipColor = Colors.green.shade100;
+        textColor = Colors.green.shade700;
+        icon = Icons.check_circle;
+        break;
+      case 'cancelled':
+        chipColor = Colors.red.shade100;
+        textColor = Colors.red.shade700;
+        icon = Icons.cancel;
+        break;
+      case 'pending':
+        chipColor = Colors.orange.shade100;
+        textColor = Colors.orange.shade700;
+        icon = Icons.schedule;
+        break;
+      default:
+        chipColor = Colors.grey.shade100;
+        textColor = Colors.grey.shade700;
+        icon = Icons.help;
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: chipColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: textColor),
+          SizedBox(width: 4),
+          Text(
+            status.toUpperCase(),
+            style: TextStyle(
+              color: textColor,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(String type) {
+    String message;
+    IconData icon;
+
+    switch (type) {
+      case 'upcoming':
+        message = 'No upcoming appointments';
+        icon = Icons.event_available;
+        break;
+      case 'completed':
+        message = 'No completed appointments';
+        icon = Icons.event_note;
+        break;
+      case 'cancelled':
+        message = 'No cancelled appointments';
+        icon = Icons.event_busy;
+        break;
+      default:
+        message = 'No appointments found';
+        icon = Icons.event;
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 80, color: Colors.grey.shade300),
+          SizedBox(height: 16),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.grey.shade600,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Your ${type} appointments will appear here',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildErrorState(String error, String type) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 80, color: Colors.red.shade300),
+          SizedBox(height: 16),
+          Text(
+            'Error loading appointments',
+            style: TextStyle(
+              fontSize: 18,
+              color: Colors.red.shade700,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          SizedBox(height: 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              'Please check your internet connection and try again',
+              style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              textAlign: TextAlign.center,
+            ),
+          ),
+          SizedBox(height: 24),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                // Trigger rebuild to retry the stream
+              });
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryGreen,
+              foregroundColor: Colors.white,
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.refresh, size: 18),
+                SizedBox(width: 8),
+                Text('Retry'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(dynamic timestamp) {
+    if (timestamp == null) return 'Unknown date';
+
     try {
-      await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(appointmentId)
-          .collection('feedback')
-          .add({
-        'rating': rating,
-        'comments': comments,
-        'submittedAt': Timestamp.now(),
-        'patientId': currentPatientId,
-      });
+      DateTime date;
+      if (timestamp is Timestamp) {
+        date = timestamp.toDate();
+      } else if (timestamp is DateTime) {
+        date = timestamp;
+      } else {
+        return 'Invalid date';
+      }
 
-      await FirebaseFirestore.instance
-          .collection('appointments')
-          .doc(appointmentId)
-          .update({
-        'hasFeedback': true,
-        'updatedAt': Timestamp.now(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Thank you for your feedback!'),
-          backgroundColor: AppColors.primaryGreen,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      return DateFormat('MMM dd, yyyy').format(date);
     } catch (e) {
-      print('Error submitting feedback: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error submitting feedback. Please try again.'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      return 'Invalid date';
+    }
+  }
+
+  String _formatDateTime(dynamic timestamp) {
+    if (timestamp == null) return 'Not scheduled';
+
+    try {
+      DateTime date;
+      if (timestamp is Timestamp) {
+        date = timestamp.toDate();
+      } else if (timestamp is DateTime) {
+        date = timestamp;
+      } else {
+        return 'Invalid date';
+      }
+
+      return DateFormat('MMM dd, yyyy • hh:mm a').format(date);
+    } catch (e) {
+      return 'Invalid date';
     }
   }
 }

@@ -9,7 +9,7 @@ class PractitionerModel {
   final DateTime? dateOfBirth;
   final DateTime createdAt;
   final DateTime updatedAt;
-  
+
   // Professional Information
   final List<String>? specialties;
   final int? experienceYears;
@@ -17,17 +17,17 @@ class PractitionerModel {
   final List<String>? qualifications;
   final String? clinicAddress;
   final String? bio;
-  
+
   // Added missing fields
   final String? experience;
   final String? qualification;
-  
+
   // Contact & Availability
   final String? emergencyContact;
   final double? consultationFee;
   final String? availableHours;
   final List<String>? languages;
-  
+
   // Additional fields that might be used
   final String? clinicName;
   final String? websiteUrl;
@@ -87,7 +87,11 @@ class PractitionerModel {
         }
         if (value is String) {
           // Handle comma-separated string
-          return value.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+          return value
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
         }
         return null;
       }
@@ -125,44 +129,80 @@ class PractitionerModel {
       return PractitionerModel(
         uid: json['uid'] as String? ?? '',
         email: json['email'] as String? ?? '',
-        fullName: json['fullName'] as String? ?? json['full_name'] as String? ?? 'Unknown Doctor',
-        phoneNumber: json['phoneNumber'] as String? ?? json['phone_number'] as String?,
-        profileImageUrl: json['profileImageUrl'] as String? ?? json['profile_image_url'] as String?,
-        dateOfBirth: parseDateTime(json['dateOfBirth'] ?? json['date_of_birth']),
-        createdAt: parseDateTime(json['createdAt'] ?? json['created_at']) ?? DateTime.now(),
-        updatedAt: parseDateTime(json['updatedAt'] ?? json['updated_at']) ?? DateTime.now(),
-        
+        fullName:
+            json['fullName'] as String? ??
+            json['full_name'] as String? ??
+            'Unknown Doctor',
+        phoneNumber:
+            json['phoneNumber'] as String? ?? json['phone_number'] as String?,
+        profileImageUrl:
+            json['profileImageUrl'] as String? ??
+            json['profile_image_url'] as String?,
+        dateOfBirth: parseDateTime(
+          json['dateOfBirth'] ?? json['date_of_birth'],
+        ),
+        createdAt:
+            parseDateTime(json['createdAt'] ?? json['created_at']) ??
+            DateTime.now(),
+        updatedAt:
+            parseDateTime(json['updatedAt'] ?? json['updated_at']) ??
+            DateTime.now(),
+
         // Professional Information
-        specialties: parseStringList(json['specialization'] ?? json['specialty'] ?? json['specialties']),
-        experienceYears: parseInt(json['experienceYears'] ?? json['experience_years']),
-        licenseNumber: json['licenseNumber'] as String? ?? json['license_number'] as String?,
+        specialties: parseStringList(
+          json['specialization'] ?? json['specialty'] ?? json['specialties'],
+        ),
+        experienceYears: parseInt(
+          json['experienceYears'] ?? json['experience_years'],
+        ),
+        licenseNumber:
+            json['licenseNumber'] as String? ??
+            json['license_number'] as String?,
         qualifications: parseStringList(json['qualifications']),
-        clinicAddress: json['clinicAddress'] as String? ?? json['clinic_address'] as String?,
+        clinicAddress:
+            json['clinicAddress'] as String? ??
+            json['clinic_address'] as String?,
         bio: json['bio'] as String? ?? json['description'] as String?,
         experience: json['experience'] as String?,
         qualification: json['qualification'] as String?,
-        
+
         // Contact & Availability
-        emergencyContact: json['emergencyContact'] as String? ?? json['emergency_contact'] as String?,
-        consultationFee: parseDouble(json['consultationFee'] ?? json['consultation_fee']),
-        availableHours: json['availableHours'] as String? ?? json['available_hours'] as String?,
+        emergencyContact:
+            json['emergencyContact'] as String? ??
+            json['emergency_contact'] as String?,
+        consultationFee: parseDouble(
+          json['consultationFee'] ?? json['consultation_fee'],
+        ),
+        availableHours:
+            json['availableHours'] as String? ??
+            json['available_hours'] as String?,
         languages: parseStringList(json['languages']),
-        
+
         // Additional fields
-        clinicName: json['clinicName'] as String? ?? json['clinic_name'] as String?,
-        websiteUrl: json['websiteUrl'] as String? ?? json['website_url'] as String?,
-        isVerified: json['isVerified'] as bool? ?? json['is_verified'] as bool? ?? false,
-        socialLinks: json['socialLinks'] as Map<String, dynamic>? ?? json['social_links'] as Map<String, dynamic>?,
+        clinicName:
+            json['clinicName'] as String? ?? json['clinic_name'] as String?,
+        websiteUrl:
+            json['websiteUrl'] as String? ?? json['website_url'] as String?,
+        isVerified:
+            json['isVerified'] as bool? ??
+            json['is_verified'] as bool? ??
+            false,
+        socialLinks:
+            json['socialLinks'] as Map<String, dynamic>? ??
+            json['social_links'] as Map<String, dynamic>?,
       );
     } catch (e) {
       print('Error in PractitionerModel.fromJson: $e');
       print('JSON data: $json');
-      
+
       // Create a minimal valid practitioner model with default values
       return PractitionerModel(
         uid: json['uid'] as String? ?? 'unknown',
         email: json['email'] as String? ?? 'unknown@example.com',
-        fullName: json['fullName'] as String? ?? json['full_name'] as String? ?? 'Unknown Doctor',
+        fullName:
+            json['fullName'] as String? ??
+            json['full_name'] as String? ??
+            'Unknown Doctor',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
         specialties: ['General Practice'],
@@ -183,7 +223,7 @@ class PractitionerModel {
       'dateOfBirth': dateOfBirth?.toIso8601String(),
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
-      
+
       // Professional Information
       'specialties': specialties,
       'experienceYears': experienceYears,
@@ -193,13 +233,13 @@ class PractitionerModel {
       'bio': bio,
       'experience': experience,
       'qualification': qualification,
-      
+
       // Contact & Availability
       'emergencyContact': emergencyContact,
       'consultationFee': consultationFee,
       'availableHours': availableHours,
       'languages': languages,
-      
+
       // Additional fields
       'clinicName': clinicName,
       'websiteUrl': websiteUrl,
@@ -226,10 +266,10 @@ class PractitionerModel {
   // Helper method to check if profile is complete
   bool get isProfileComplete {
     return fullName.isNotEmpty &&
-           email.isNotEmpty &&
-           phoneNumber != null &&
-           specialties != null &&
-           licenseNumber != null;
+        email.isNotEmpty &&
+        phoneNumber != null &&
+        specialties != null &&
+        licenseNumber != null;
   }
 
   // Helper method to get qualification string

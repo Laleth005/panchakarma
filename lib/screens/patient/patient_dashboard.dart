@@ -4,7 +4,6 @@ import '../../services/auth_service.dart';
 import '../../models/patient_model.dart';
 import '../auth/login_screen_new.dart';
 import 'consulting_page.dart'; // Correct import
-
 import 'appointments_page.dart';
 import 'profile_page.dart';
 
@@ -101,7 +100,7 @@ class _PatientDashboardState extends State<PatientDashboard>
     );
   }
 
-  /// ✅ Corrected version: Fetches patient data by UID directly from `patients` collection
+  /// Fetches patient data by UID directly from `patients` collection
   Future<void> _loadPatientData() async {
     try {
       print("========== LOADING PATIENT DATA ==========");
@@ -254,10 +253,12 @@ class _PatientDashboardState extends State<PatientDashboard>
             data['id'] = doc.id;
             return data;
           })
-          .where((data) =>
-              data['status'] == 'scheduled' &&
-              data['appointmentDate'] != null &&
-              (data['appointmentDate'] as Timestamp).toDate().isAfter(now))
+          .where(
+            (data) =>
+                data['status'] == 'scheduled' &&
+                data['appointmentDate'] != null &&
+                (data['appointmentDate'] as Timestamp).toDate().isAfter(now),
+          )
           .toList();
 
       // Sort by date
@@ -366,11 +367,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                     color: surfaceGreen,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.healing,
-                    size: 60,
-                    color: primaryGreen,
-                  ),
+                  child: Icon(Icons.healing, size: 60, color: primaryGreen),
                 ),
                 SizedBox(height: 24),
                 Text(
@@ -396,8 +393,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                   style: ElevatedButton.styleFrom(
                     backgroundColor: primaryGreen,
                     foregroundColor: Colors.white,
-                    padding:
-                        EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(30),
                     ),
@@ -406,10 +402,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                   onPressed: _signOut,
                   child: Text(
                     'Return to Login',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ],
@@ -484,11 +477,7 @@ class _PatientDashboardState extends State<PatientDashboard>
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(
-              Icons.spa,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: Icon(Icons.spa, color: Colors.white, size: 24),
           ),
           SizedBox(width: 12),
           Text(
@@ -519,7 +508,8 @@ class _PatientDashboardState extends State<PatientDashboard>
                     child: CircularProgressIndicator(
                       color: Colors.white,
                       strokeWidth: 2,
-                    ))
+                    ),
+                  )
                 : Icon(Icons.refresh, color: Colors.white, size: 20),
           ),
           onPressed: _isRefreshing ? null : _refreshDashboard,
@@ -533,8 +523,11 @@ class _PatientDashboardState extends State<PatientDashboard>
               color: Colors.white.withOpacity(0.2),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.notifications_outlined,
-                color: Colors.white, size: 20),
+            child: Icon(
+              Icons.notifications_outlined,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
           onPressed: () {
             // Navigate to notifications screen
@@ -710,7 +703,7 @@ class _PatientDashboardState extends State<PatientDashboard>
       'September',
       'October',
       'November',
-      'December'
+      'December',
     ];
     return months[month - 1];
   }
@@ -735,16 +728,22 @@ class _PatientDashboardState extends State<PatientDashboard>
                 'Book Consultation',
                 Icons.medical_services,
                 () {
-                  // ===============================================
-                  // 1. THIS IS THE FIRST FIX
-                  // ===============================================
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) =>
-                          ConsultingPage(patientId: _patientData?.uid),
-                    ),
-                  );
+                  if (_patientData?.uid != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            ConsultingPage(patientId: _patientData!.uid),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unable to load patient data'),
+                        backgroundColor: Colors.red.shade600,
+                      ),
+                    );
+                  }
                 },
               ),
             ),
@@ -754,11 +753,23 @@ class _PatientDashboardState extends State<PatientDashboard>
                 'My Appointments',
                 Icons.calendar_today,
                 () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const PatientAppointmentsPage()),
-                  );
+                  if (_patientData?.uid != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PatientAppointmentsPage(
+                          patientId: _patientData!.uid,
+                        ),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Unable to load patient data'),
+                        backgroundColor: Colors.red.shade600,
+                      ),
+                    );
+                  }
                 },
               ),
             ),
@@ -768,29 +779,30 @@ class _PatientDashboardState extends State<PatientDashboard>
         Row(
           children: [
             Expanded(
-              child: _buildActionCard(
-                'View Profile',
-                Icons.person,
-                () {
+              child: _buildActionCard('View Profile', Icons.person, () {
+                if (_patientData?.uid != null) {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
-                          ProfilePage(patientId: _patientData?.uid),
+                          ProfilePage(patientId: _patientData!.uid),
                     ),
                   );
-                },
-              ),
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('Unable to load patient data'),
+                      backgroundColor: Colors.red.shade600,
+                    ),
+                  );
+                }
+              }),
             ),
             SizedBox(width: 12),
             Expanded(
-              child: _buildActionCard(
-                'Progress Report',
-                Icons.trending_up,
-                () {
-                  // Navigate to progress screen
-                },
-              ),
+              child: _buildActionCard('Progress Report', Icons.trending_up, () {
+                // Navigate to progress screen
+              }),
             ),
           ],
         ),
@@ -822,11 +834,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                 color: surfaceGreen,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(
-                icon,
-                color: primaryGreen,
-                size: 28,
-              ),
+              child: Icon(icon, color: primaryGreen, size: 28),
             ),
             SizedBox(height: 12),
             Text(
@@ -873,11 +881,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                   color: primaryGreen,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.spa,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                child: Icon(Icons.spa, color: Colors.white, size: 28),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -952,16 +956,10 @@ class _PatientDashboardState extends State<PatientDashboard>
               Container(
                 padding: EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [primaryGreen, accentGreen],
-                  ),
+                  gradient: LinearGradient(colors: [primaryGreen, accentGreen]),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.healing,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                child: Icon(Icons.healing, color: Colors.white, size: 28),
               ),
               SizedBox(width: 16),
               Expanded(
@@ -1117,57 +1115,59 @@ class _PatientDashboardState extends State<PatientDashboard>
           crossAxisSpacing: 12,
           childAspectRatio: 1.2,
           children: benefits
-              .map((benefit) => Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: primaryGreen.withOpacity(0.08),
-                          blurRadius: 10,
-                          spreadRadius: 2,
+              .map(
+                (benefit) => Container(
+                  padding: EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryGreen.withOpacity(0.08),
+                        blurRadius: 10,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: surfaceGreen,
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ],
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: surfaceGreen,
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Icon(
-                            benefit['icon'] as IconData,
-                            color: primaryGreen,
-                            size: 28,
-                          ),
+                        child: Icon(
+                          benefit['icon'] as IconData,
+                          color: primaryGreen,
+                          size: 28,
                         ),
-                        SizedBox(height: 12),
-                        Text(
-                          benefit['title'] as String,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: primaryGreen,
-                          ),
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        benefit['title'] as String,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: primaryGreen,
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          benefit['description'] as String,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[600],
-                            height: 1.3,
-                          ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        benefit['description'] as String,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          height: 1.3,
                         ),
-                      ],
-                    ),
-                  ))
+                      ),
+                    ],
+                  ),
+                ),
+              )
               .toList(),
         ),
       ],
@@ -1199,44 +1199,70 @@ class _PatientDashboardState extends State<PatientDashboard>
               });
               break;
             case 1: // Consulting
-              // ===============================================
-              // 2. THIS IS THE SECOND FIX
-              // ===============================================
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                     ConsultingPage(patientId: _patientData?.uid),
-                ),
-              ).then((_) {
-                // After returning from the consulting page, set the index back to home
-                setState(() {
-                  _currentIndex = 0;
+              if (_patientData?.uid != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ConsultingPage(patientId: _patientData!.uid),
+                  ),
+                ).then((_) {
+                  setState(() {
+                    _currentIndex = 0;
+                  });
                 });
-              });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unable to load patient data'),
+                    backgroundColor: Colors.red.shade600,
+                  ),
+                );
+              }
               break;
             case 2: // Appointments
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PatientAppointmentsPage()),
-              ).then((_) {
-                setState(() {
-                  _currentIndex = 0;
+              if (_patientData?.uid != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        PatientAppointmentsPage(patientId: _patientData!.uid),
+                  ),
+                ).then((_) {
+                  setState(() {
+                    _currentIndex = 0;
+                  });
                 });
-              });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unable to load patient data'),
+                    backgroundColor: Colors.red.shade600,
+                  ),
+                );
+              }
               break;
             case 3: // Profile
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      ProfilePage(patientId: _patientData?.uid),
-                ),
-              ).then((_) {
-                setState(() {
-                  _currentIndex = 0;
+              if (_patientData?.uid != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) =>
+                        ProfilePage(patientId: _patientData!.uid),
+                  ),
+                ).then((_) {
+                  setState(() {
+                    _currentIndex = 0;
+                  });
                 });
-              });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Unable to load patient data'),
+                    backgroundColor: Colors.red.shade600,
+                  ),
+                );
+              }
               break;
           }
         },
@@ -1311,8 +1337,8 @@ class _PatientDashboardState extends State<PatientDashboard>
       return SizedBox.shrink();
     }
 
-    final appointmentDate =
-        (_nextAppointment!['appointmentDate'] as Timestamp).toDate();
+    final appointmentDate = (_nextAppointment!['appointmentDate'] as Timestamp)
+        .toDate();
     final formattedDate =
         '${_getMonthName(appointmentDate.month)} ${_getDateSuffix(appointmentDate.day)}, ${appointmentDate.year}';
 
@@ -1453,8 +1479,9 @@ class _PatientDashboardState extends State<PatientDashboard>
   }
 
   Widget _buildHeroSection() {
-    final String patientName =
-        _patientData != null ? _patientData!.fullName : 'Patient';
+    final String patientName = _patientData != null
+        ? _patientData!.fullName
+        : 'Patient';
     final String greeting = _getGreeting();
 
     return Container(
@@ -1528,7 +1555,9 @@ class _PatientDashboardState extends State<PatientDashboard>
                             Container(
                               margin: EdgeInsets.only(top: 8),
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
@@ -1557,11 +1586,7 @@ class _PatientDashboardState extends State<PatientDashboard>
                   ),
                   child: Column(
                     children: [
-                      Icon(
-                        Icons.spa,
-                        color: Colors.white,
-                        size: 32,
-                      ),
+                      Icon(Icons.spa, color: Colors.white, size: 32),
                       SizedBox(height: 12),
                       Text(
                         'Your Journey to Authentic Ayurvedic Wellness',

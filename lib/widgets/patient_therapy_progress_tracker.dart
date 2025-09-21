@@ -37,10 +37,7 @@ class PatientTherapyProgressTracker extends StatelessWidget {
       children: [
         const Text(
           'Patient Therapy Progress',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         TextButton(
           onPressed: () {
@@ -71,7 +68,9 @@ class PatientTherapyProgressTracker extends StatelessWidget {
     return ListView.separated(
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      itemCount: therapyProgressList.length > 5 ? 5 : therapyProgressList.length,
+      itemCount: therapyProgressList.length > 5
+          ? 5
+          : therapyProgressList.length,
       separatorBuilder: (context, index) => const Divider(height: 16),
       itemBuilder: (context, index) {
         final therapy = therapyProgressList[index];
@@ -80,7 +79,10 @@ class PatientTherapyProgressTracker extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressItem(BuildContext context, TherapyProgressModel therapy) {
+  Widget _buildProgressItem(
+    BuildContext context,
+    TherapyProgressModel therapy,
+  ) {
     return InkWell(
       onTap: () => onProgressTap(therapy),
       borderRadius: BorderRadius.circular(8),
@@ -126,10 +128,7 @@ class PatientTherapyProgressTracker extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     therapy.therapyName,
-                    style: TextStyle(
-                      color: Colors.grey.shade700,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   // Progress bar
@@ -169,7 +168,7 @@ class PatientTherapyProgressTracker extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  ]
+                  ],
                 ],
               ),
             ),

@@ -44,12 +44,7 @@ class TaskReminderModel {
   }
 }
 
-enum Priority {
-  low,
-  medium,
-  high,
-  urgent
-}
+enum Priority { low, medium, high, urgent }
 
 extension PriorityExtension on Priority {
   String get name {
@@ -64,7 +59,7 @@ extension PriorityExtension on Priority {
         return 'Urgent';
     }
   }
-  
+
   Color get color {
     switch (this) {
       case Priority.low:

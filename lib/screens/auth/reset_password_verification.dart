@@ -12,7 +12,8 @@ class ResetPasswordVerification extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _ResetPasswordVerificationState createState() => _ResetPasswordVerificationState();
+  _ResetPasswordVerificationState createState() =>
+      _ResetPasswordVerificationState();
 }
 
 class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
@@ -20,7 +21,7 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final AuthService _authService = AuthService();
-  
+
   bool _isLoading = false;
   String? _message;
   bool _isSuccess = false;
@@ -36,12 +37,12 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
 
   Future<void> _resetPassword() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _message = null;
     });
-    
+
     try {
       // Use our custom password reset verification method
       await _authService.verifyResetTokenAndUpdatePassword(
@@ -49,11 +50,12 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
         widget.token,
         _passwordController.text.trim(),
       );
-      
+
       setState(() {
         _isLoading = false;
         _isSuccess = true;
-        _message = 'Your password has been reset successfully. You can now login with your new password.';
+        _message =
+            'Your password has been reset successfully. You can now login with your new password.';
       });
     } catch (e) {
       print('Error in reset password verification: $e');
@@ -118,7 +120,7 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                   ],
                 ),
               ),
-              
+
               Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -135,19 +137,17 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                     SizedBox(height: 12),
                     Text(
                       'Enter your new password below.',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[700],
-                      ),
+                      style: TextStyle(fontSize: 16, color: Colors.grey[700]),
                     ),
                     SizedBox(height: 30),
-                    
+
                     Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('New Password', 
+                          Text(
+                            'New Password',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[700],
@@ -165,10 +165,15 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
-                              prefixIcon: Icon(Icons.lock_outline, color: Colors.green),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Colors.green,
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  _obscurePassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: Colors.grey,
                                 ),
                                 onPressed: () {
@@ -188,10 +193,11 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                               return null;
                             },
                           ),
-                          
+
                           SizedBox(height: 16),
-                          
-                          Text('Confirm Password', 
+
+                          Text(
+                            'Confirm Password',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Colors.grey[700],
@@ -209,15 +215,21 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                                 borderRadius: BorderRadius.circular(12),
                                 borderSide: BorderSide.none,
                               ),
-                              prefixIcon: Icon(Icons.lock_outline, color: Colors.green),
+                              prefixIcon: Icon(
+                                Icons.lock_outline,
+                                color: Colors.green,
+                              ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_off
+                                      : Icons.visibility,
                                   color: Colors.grey,
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
                                   });
                                 },
                               ),
@@ -235,25 +247,29 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                         ],
                       ),
                     ),
-                    
+
                     SizedBox(height: 30),
-                    
+
                     if (_message != null)
                       Container(
                         padding: EdgeInsets.all(12),
                         margin: EdgeInsets.only(bottom: 20),
                         decoration: BoxDecoration(
-                          color: _isSuccess ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                          color: _isSuccess
+                              ? Colors.green.withOpacity(0.2)
+                              : Colors.red.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           _message!,
                           style: TextStyle(
-                            color: _isSuccess ? Colors.green.shade800 : Colors.red.shade800,
+                            color: _isSuccess
+                                ? Colors.green.shade800
+                                : Colors.red.shade800,
                           ),
                         ),
                       ),
-                    
+
                     ElevatedButton(
                       onPressed: _isLoading ? null : _resetPassword,
                       style: ElevatedButton.styleFrom(
@@ -270,15 +286,20 @@ class _ResetPasswordVerificationState extends State<ResetPasswordVerification> {
                               style: TextStyle(fontSize: 16),
                             ),
                     ),
-                    
+
                     if (_isSuccess)
                       Padding(
                         padding: const EdgeInsets.only(top: 20),
                         child: TextButton(
-                          onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
+                          onPressed: () => Navigator.of(
+                            context,
+                          ).popUntil((route) => route.isFirst),
                           child: Text(
                             'Back to Login',
-                            style: TextStyle(color: Color(0xFF2E7D32), fontSize: 16),
+                            style: TextStyle(
+                              color: Color(0xFF2E7D32),
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),

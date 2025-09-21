@@ -17,7 +17,7 @@ void main() {
 
     // Verify the app renders without crashing
     expect(find.byType(MaterialApp), findsOneWidget);
-    
+
     // Additional tests can be added here as needed for your specific UI
   });
 }

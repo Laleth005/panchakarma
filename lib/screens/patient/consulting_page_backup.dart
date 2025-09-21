@@ -96,22 +96,22 @@ class _PatientConsultationFormPageState
     try {
       // Get current user
       _currentUser = FirebaseAuth.instance.currentUser;
-      
+
       if (_currentUser != null) {
         print('✅ User authenticated: ${_currentUser!.uid}');
         print('User email: ${_currentUser!.email}');
         print('User display name: ${_currentUser!.displayName}');
-        
+
         // Pre-populate form with user data if available
         _prefillUserData();
-        
+
         // Listen to auth state changes
         FirebaseAuth.instance.authStateChanges().listen((User? user) {
           if (mounted) {
             setState(() {
               _currentUser = user;
             });
-            
+
             if (user == null) {
               print('❌ User signed out during form session');
               _showErrorSnackBar('Session expired. Please login again.');
@@ -125,7 +125,6 @@ class _PatientConsultationFormPageState
         Navigator.of(context).pop();
         return;
       }
-      
     } catch (e) {
       print('❌ Authentication initialization error: $e');
       _showErrorSnackBar('Authentication error. Please try again.');
@@ -144,7 +143,8 @@ class _PatientConsultationFormPageState
   void _prefillUserData() {
     if (_currentUser != null) {
       // Pre-fill name if available
-      if (_currentUser!.displayName != null && _currentUser!.displayName!.isNotEmpty) {
+      if (_currentUser!.displayName != null &&
+          _currentUser!.displayName!.isNotEmpty) {
         _nameController.text = _currentUser!.displayName!;
       }
     }
@@ -232,7 +232,8 @@ class _PatientConsultationFormPageState
       _showErrorSnackBar('Please select a health condition');
       return false;
     }
-    if (_selectedCondition == 'Others' && _customConditionController.text.trim().isEmpty) {
+    if (_selectedCondition == 'Others' &&
+        _customConditionController.text.trim().isEmpty) {
       _showErrorSnackBar('Please specify your condition');
       return false;
     }
@@ -336,56 +337,60 @@ class _PatientConsultationFormPageState
 
     try {
       print('🚀 Starting form submission for user: ${_currentUser!.uid}');
-      
+
       // Refresh the user token to ensure it's valid
       await _currentUser!.reload();
       String? idToken = await _currentUser!.getIdToken(true);
-      
+
       if (idToken == null) {
         throw FirebaseAuthException(
           code: 'token-not-available',
           message: 'Unable to get authentication token',
         );
       }
-      
+
       print('✅ Authentication token refreshed successfully');
-      
+
       // Prepare appointment data with comprehensive user info
       final appointmentData = <String, dynamic>{
         // User authentication details
         'userId': _currentUser!.uid,
         'userEmail': _currentUser!.email ?? 'No email provided',
-        'userDisplayName': _currentUser!.displayName ?? _nameController.text.trim(),
+        'userDisplayName':
+            _currentUser!.displayName ?? _nameController.text.trim(),
         'phoneVerified': _currentUser!.phoneNumber != null,
         'emailVerified': _currentUser!.emailVerified,
-        
+
         // Patient information
         'patientName': _nameController.text.trim(),
         'age': int.tryParse(_ageController.text.trim()) ?? 0,
         'gender': _selectedGender,
         'phoneNumber': _phoneController.text.trim(),
-        
+
         // Health information
-        'healthCondition': _selectedCondition == 'Others' 
-            ? _customConditionController.text.trim() 
+        'healthCondition': _selectedCondition == 'Others'
+            ? _customConditionController.text.trim()
             : _selectedCondition,
         'conditionDescription': _conditionDescriptionController.text.trim(),
         'panchakarmaExperience': _panchakarmaExperience,
-        
+
         // Appointment details
         'appointmentDate': Timestamp.fromDate(_selectedDate),
-        'appointmentTime': '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
-        'appointmentDateTime': Timestamp.fromDate(DateTime(
-          _selectedDate.year,
-          _selectedDate.month,
-          _selectedDate.day,
-          _selectedTime.hour,
-          _selectedTime.minute,
-        )),
-        
+        'appointmentTime':
+            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+        'appointmentDateTime': Timestamp.fromDate(
+          DateTime(
+            _selectedDate.year,
+            _selectedDate.month,
+            _selectedDate.day,
+            _selectedTime.hour,
+            _selectedTime.minute,
+          ),
+        ),
+
         // Additional information
         'additionalNotes': _additionalNotesController.text.trim(),
-        
+
         // Status and metadata
         'status': 'pending',
         'appointmentType': 'consultation',
@@ -394,13 +399,15 @@ class _PatientConsultationFormPageState
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
         'submittedAt': DateTime.now().toIso8601String(),
-        
+
         // Device and session info
         'submissionSource': 'mobile_app',
         'deviceInfo': 'flutter_app',
       };
 
-      print('📝 Appointment data prepared with ${appointmentData.keys.length} fields');
+      print(
+        '📝 Appointment data prepared with ${appointmentData.keys.length} fields',
+      );
 
       // Check Firestore connectivity
       await FirebaseFirestore.instance.disableNetwork();
@@ -411,44 +418,41 @@ class _PatientConsultationFormPageState
       DocumentReference docRef;
       int retryCount = 0;
       const maxRetries = 3;
-      
+
       while (retryCount < maxRetries) {
         try {
           docRef = await FirebaseFirestore.instance
               .collection('appointments')
               .add(appointmentData);
-          
+
           print('✅ Appointment saved successfully with ID: ${docRef.id}');
           break;
-          
         } catch (e) {
           retryCount++;
           print('⚠️ Attempt $retryCount failed: $e');
-          
+
           if (retryCount >= maxRetries) {
             throw e;
           }
-          
+
           // Wait before retry
           await Future.delayed(Duration(seconds: retryCount));
         }
       }
-      
+
       // Verify the document was created
-      
-      
+
       // Wait for user to see the success message
       await Future.delayed(Duration(seconds: 2));
-      
+
       // Navigate back to dashboard
       if (mounted) {
         Navigator.of(context).pop(true); // Return true to indicate success
       }
-
     } on FirebaseAuthException catch (e) {
       print('🔥 Firebase Auth Error: ${e.code} - ${e.message}');
       String errorMessage = 'Authentication error: ';
-      
+
       switch (e.code) {
         case 'user-token-expired':
         case 'token-not-available':
@@ -466,19 +470,19 @@ class _PatientConsultationFormPageState
         default:
           errorMessage += 'Please login again and retry.';
       }
-      
+
       _showErrorSnackBar(errorMessage);
-      
     } on FirebaseException catch (e) {
       print('🔥 Firebase Firestore Error: ${e.code} - ${e.message}');
       String errorMessage = 'Failed to submit appointment. ';
-      
+
       switch (e.code) {
         case 'permission-denied':
           errorMessage += 'Access denied. Please check your login status.';
           break;
         case 'unavailable':
-          errorMessage += 'Service unavailable. Please check your internet connection.';
+          errorMessage +=
+              'Service unavailable. Please check your internet connection.';
           break;
         case 'unauthenticated':
           errorMessage += 'Authentication required. Please login again.';
@@ -488,14 +492,14 @@ class _PatientConsultationFormPageState
           errorMessage += 'Request timed out. Please try again.';
           break;
         case 'resource-exhausted':
-          errorMessage += 'Service temporarily overloaded. Please try again later.';
+          errorMessage +=
+              'Service temporarily overloaded. Please try again later.';
           break;
         default:
           errorMessage += 'Error code: ${e.code}. Please try again.';
       }
-      
+
       _showErrorSnackBar(errorMessage);
-      
     } catch (e) {
       print('❌ General Error during submission: $e');
       _showErrorSnackBar('Unexpected error occurred. Please try again.');
@@ -518,11 +522,11 @@ class _PatientConsultationFormPageState
             .collection('appointments')
             .doc(appointmentId)
             .set({
-          'appointmentId': appointmentId,
-          'status': 'pending',
-          'type': 'consultation',
-          'createdAt': FieldValue.serverTimestamp(),
-        });
+              'appointmentId': appointmentId,
+              'status': 'pending',
+              'type': 'consultation',
+              'createdAt': FieldValue.serverTimestamp(),
+            });
         print('✅ Appointment reference saved to user profile');
       }
     } catch (e) {
@@ -659,7 +663,7 @@ class _PatientConsultationFormPageState
         children: [
           // Progress indicator
           _buildProgressIndicator(),
-          
+
           // Page content
           Expanded(
             child: PageView(
@@ -676,7 +680,7 @@ class _PatientConsultationFormPageState
               ],
             ),
           ),
-          
+
           // Navigation buttons
           _buildNavigationButtons(),
         ],
@@ -697,7 +701,9 @@ class _PatientConsultationFormPageState
                 child: LinearProgressIndicator(
                   value: i <= _currentPage ? 1.0 : 0.0,
                   backgroundColor: Colors.grey.shade300,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryGreen,
+                  ),
                   minHeight: 4,
                 ),
               ),
@@ -728,7 +734,7 @@ class _PatientConsultationFormPageState
               'Please provide your basic information',
               style: TextStyle(color: Colors.grey[600]),
             ),
-            
+
             // Show user account info
             if (_currentUser != null) ...[
               SizedBox(height: 16),
@@ -737,11 +743,17 @@ class _PatientConsultationFormPageState
                 decoration: BoxDecoration(
                   color: AppColors.cardGreen.withOpacity(0.3),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.accentGreen.withOpacity(0.5)),
+                  border: Border.all(
+                    color: AppColors.accentGreen.withOpacity(0.5),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    Icon(Icons.verified_user, color: AppColors.primaryGreen, size: 20),
+                    Icon(
+                      Icons.verified_user,
+                      color: AppColors.primaryGreen,
+                      size: 20,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -756,7 +768,7 @@ class _PatientConsultationFormPageState
                 ),
               ),
             ],
-            
+
             SizedBox(height: 24),
 
             _buildTextField(
@@ -793,9 +805,7 @@ class _PatientConsultationFormPageState
                   ),
                 ),
                 SizedBox(width: 16),
-                Expanded(
-                  child: _buildGenderSelector(),
-                ),
+                Expanded(child: _buildGenderSelector()),
               ],
             ),
             SizedBox(height: 16),
@@ -902,7 +912,8 @@ class _PatientConsultationFormPageState
               Expanded(
                 child: _buildDateTimeSelector(
                   label: 'Date',
-                  value: '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                  value:
+                      '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
                   icon: Icons.calendar_today,
                   onTap: _selectDate,
                 ),
@@ -911,7 +922,8 @@ class _PatientConsultationFormPageState
               Expanded(
                 child: _buildDateTimeSelector(
                   label: 'Time',
-                  value: '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+                  value:
+                      '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
                   icon: Icons.access_time,
                   onTap: _selectTime,
                 ),
@@ -1053,8 +1065,9 @@ class _PatientConsultationFormPageState
                     color: isSelected
                         ? AppColors.primaryGreen
                         : AppColors.darkGreen,
-                    fontWeight:
-                        isSelected ? FontWeight.bold : FontWeight.normal,
+                    fontWeight: isSelected
+                        ? FontWeight.bold
+                        : FontWeight.normal,
                   ),
                 ),
                 value: condition,
@@ -1079,10 +1092,7 @@ class _PatientConsultationFormPageState
         return Container(
           margin: EdgeInsets.symmetric(vertical: 4),
           child: RadioListTile<String>(
-            title: Text(
-              option,
-              style: TextStyle(color: AppColors.darkGreen),
-            ),
+            title: Text(option, style: TextStyle(color: AppColors.darkGreen)),
             value: option,
             groupValue: _panchakarmaExperience,
             activeColor: AppColors.primaryGreen,
@@ -1126,12 +1136,14 @@ class _PatientConsultationFormPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label,
-                      style: TextStyle(
-                          fontSize: 12, color: Colors.grey.shade600)),
-                  Text(value,
-                      style: TextStyle(
-                          fontSize: 16, color: AppColors.darkGreen)),
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                  ),
+                  Text(
+                    value,
+                    style: TextStyle(fontSize: 16, color: AppColors.darkGreen),
+                  ),
                 ],
               ),
             ),
@@ -1162,40 +1174,58 @@ class _PatientConsultationFormPageState
             ),
           ),
           SizedBox(height: 12),
-          
+
           // User Account Info
           if (_currentUser != null) ...[
-            _buildSummaryRow('Account Email', _currentUser!.email ?? 'Not available'),
-            _buildSummaryRow('User ID', _currentUser!.uid.substring(0, 8) + '...'),
+            _buildSummaryRow(
+              'Account Email',
+              _currentUser!.email ?? 'Not available',
+            ),
+            _buildSummaryRow(
+              'User ID',
+              _currentUser!.uid.substring(0, 8) + '...',
+            ),
             Divider(color: AppColors.accentGreen.withOpacity(0.5)),
           ],
-          
+
           // Personal Information
           _buildSummaryRow('Name', _nameController.text),
           _buildSummaryRow('Age', _ageController.text),
           _buildSummaryRow('Gender', _selectedGender),
           _buildSummaryRow('Phone', _phoneController.text),
-          
+
           Divider(color: AppColors.accentGreen.withOpacity(0.5)),
-          
+
           // Health Information
-          _buildSummaryRow('Condition', _selectedCondition == 'Others' 
-              ? _customConditionController.text 
-              : _selectedCondition),
+          _buildSummaryRow(
+            'Condition',
+            _selectedCondition == 'Others'
+                ? _customConditionController.text
+                : _selectedCondition,
+          ),
           if (_conditionDescriptionController.text.trim().isNotEmpty)
-            _buildSummaryRow('Description', _conditionDescriptionController.text),
+            _buildSummaryRow(
+              'Description',
+              _conditionDescriptionController.text,
+            ),
           _buildSummaryRow('Experience', _panchakarmaExperience),
-          
+
           Divider(color: AppColors.accentGreen.withOpacity(0.5)),
-          
+
           // Appointment Information
           _buildSummaryRow(
-              'Preferred Date',
-              '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
-          _buildSummaryRow('Preferred Time',
-              '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}'),
+            'Preferred Date',
+            '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+          ),
+          _buildSummaryRow(
+            'Preferred Time',
+            '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}',
+          ),
           if (_additionalNotesController.text.trim().isNotEmpty)
-            _buildSummaryRow('Additional Notes', _additionalNotesController.text),
+            _buildSummaryRow(
+              'Additional Notes',
+              _additionalNotesController.text,
+            ),
         ],
       ),
     );
@@ -1212,9 +1242,9 @@ class _PatientConsultationFormPageState
             child: Text(
               '$label:',
               style: TextStyle(
-                  fontWeight: FontWeight.w600, 
-                  color: AppColors.darkGreen,
-                  fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.darkGreen,
+                fontSize: 13,
               ),
             ),
           ),
@@ -1222,10 +1252,7 @@ class _PatientConsultationFormPageState
             flex: 5,
             child: Text(
               value.isNotEmpty ? value : '-',
-              style: TextStyle(
-                color: Colors.grey[700], 
-                fontSize: 13,
-              ),
+              style: TextStyle(color: Colors.grey[700], fontSize: 13),
             ),
           ),
         ],
@@ -1248,7 +1275,8 @@ class _PatientConsultationFormPageState
                     foregroundColor: AppColors.primaryGreen,
                     side: BorderSide(color: AppColors.primaryGreen),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8)),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                     padding: EdgeInsets.symmetric(vertical: 14),
                   ),
                   child: Text('Back'),
@@ -1260,14 +1288,15 @@ class _PatientConsultationFormPageState
                 onPressed: _isSubmitting
                     ? null
                     : _currentPage == 2
-                        ? _submitForm
-                        : _nextPage,
+                    ? _submitForm
+                    : _nextPage,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryGreen,
                   foregroundColor: Colors.white,
                   padding: EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: _isSubmitting
                     ? Row(
@@ -1277,7 +1306,9 @@ class _PatientConsultationFormPageState
                             width: 20,
                             height: 20,
                             child: CircularProgressIndicator(
-                                color: Colors.white, strokeWidth: 2),
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
                           ),
                           SizedBox(width: 12),
                           Text('Submitting...'),

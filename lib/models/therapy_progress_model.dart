@@ -1,11 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum TherapyStatus {
-  notStarted,
-  inProgress,
-  completed,
-  cancelled,
-}
+enum TherapyStatus { notStarted, inProgress, completed, cancelled }
 
 class TherapyProgressModel {
   final String id;
@@ -38,7 +33,7 @@ class TherapyProgressModel {
 
   factory TherapyProgressModel.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    
+
     return TherapyProgressModel(
       id: doc.id,
       patientId: data['patientId'] ?? '',
@@ -51,7 +46,9 @@ class TherapyProgressModel {
       totalSessions: data['totalSessions'] ?? 0,
       completedSessions: data['completedSessions'] ?? 0,
       startDate: (data['startDate'] as Timestamp).toDate(),
-      endDate: data['endDate'] != null ? (data['endDate'] as Timestamp).toDate() : null,
+      endDate: data['endDate'] != null
+          ? (data['endDate'] as Timestamp).toDate()
+          : null,
       notes: data['notes'],
       progressPercentage: data['progressPercentage'] ?? 0.0,
       profileImageUrl: data['profileImageUrl'],

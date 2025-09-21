@@ -44,13 +44,16 @@ class KnowledgeHubService {
           .collection('knowledge_categories')
           .orderBy('order')
           .get();
-          
-      return snapshot.docs
-          .map((doc) => doc.data()['name'] as String)
-          .toList();
+
+      return snapshot.docs.map((doc) => doc.data()['name'] as String).toList();
     } catch (e) {
       print('Error fetching knowledge categories: $e');
-      return ['Panchakarma Basics', 'Procedures', 'Patient Care', 'Best Practices'];
+      return [
+        'Panchakarma Basics',
+        'Procedures',
+        'Patient Care',
+        'Best Practices',
+      ];
     }
   }
 
@@ -62,14 +65,12 @@ class KnowledgeHubService {
           .where('category', isEqualTo: category)
           .orderBy('title')
           .get();
-          
-      return snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return KnowledgeItem.fromJson(data);
-          })
-          .toList();
+
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return KnowledgeItem.fromJson(data);
+      }).toList();
     } catch (e) {
       print('Error fetching knowledge items: $e');
       return [];
@@ -79,26 +80,22 @@ class KnowledgeHubService {
   // Search knowledge hub
   Future<List<KnowledgeItem>> searchKnowledge(String query) async {
     try {
-      final snapshot = await _firestore
-          .collection('knowledge_hub')
-          .get();
-      
-      final items = snapshot.docs
-          .map((doc) {
-            final data = doc.data();
-            data['id'] = doc.id;
-            return KnowledgeItem.fromJson(data);
-          })
-          .toList();
-      
+      final snapshot = await _firestore.collection('knowledge_hub').get();
+
+      final items = snapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return KnowledgeItem.fromJson(data);
+      }).toList();
+
       // Perform client-side filtering
       if (query.isEmpty) return items;
-      
+
       final lowerQuery = query.toLowerCase();
       return items.where((item) {
         return item.title.toLowerCase().contains(lowerQuery) ||
-               item.content.toLowerCase().contains(lowerQuery) ||
-               item.tags.any((tag) => tag.toLowerCase().contains(lowerQuery));
+            item.content.toLowerCase().contains(lowerQuery) ||
+            item.tags.any((tag) => tag.toLowerCase().contains(lowerQuery));
       }).toList();
     } catch (e) {
       print('Error searching knowledge hub: $e');
@@ -115,11 +112,11 @@ class KnowledgeHubService {
           .where('tags', arrayContains: therapyType)
           .limit(1)
           .get();
-          
+
       if (snapshot.docs.isEmpty) {
         return null;
       }
-      
+
       final doc = snapshot.docs.first;
       final data = doc.data();
       data['id'] = doc.id;

@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 class TaskReminderPanel extends StatefulWidget {
   final String practitionerId;
   final Function() onAddTask;
-  
+
   const TaskReminderPanel({
     Key? key,
     required this.practitionerId,
@@ -34,7 +34,7 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
       _isLoading = true;
       _hasError = false;
     });
-    
+
     try {
       final tasks = await _repository.getTaskReminders(widget.practitionerId);
       setState(() {
@@ -52,7 +52,7 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
   Future<void> _toggleTaskStatus(TaskReminderModel task) async {
     final newStatus = !task.isCompleted;
     final success = await _repository.updateTaskStatus(task.id, newStatus);
-    
+
     if (success) {
       setState(() {
         final index = _tasks.indexWhere((t) => t.id == task.id);
@@ -123,16 +123,17 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.error_outline, size: 48, color: Colors.red.shade300),
+                    Icon(
+                      Icons.error_outline,
+                      size: 48,
+                      color: Colors.red.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'Error loading tasks',
                       style: TextStyle(color: Colors.red.shade700),
                     ),
-                    TextButton(
-                      onPressed: _loadTasks,
-                      child: Text('Retry'),
-                    ),
+                    TextButton(onPressed: _loadTasks, child: Text('Retry')),
                   ],
                 ),
               ),
@@ -143,7 +144,11 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
               child: Center(
                 child: Column(
                   children: [
-                    Icon(Icons.check_circle_outline, size: 48, color: Colors.green.shade300),
+                    Icon(
+                      Icons.check_circle_outline,
+                      size: 48,
+                      color: Colors.green.shade300,
+                    ),
                     SizedBox(height: 16),
                     Text(
                       'No pending tasks',
@@ -177,8 +182,9 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
   }
 
   Widget _buildTaskItem(TaskReminderModel task) {
-    final bool isOverdue = task.dueDate.isBefore(DateTime.now()) && !task.isCompleted;
-    
+    final bool isOverdue =
+        task.dueDate.isBefore(DateTime.now()) && !task.isCompleted;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
       child: Row(
@@ -205,7 +211,9 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    decoration: task.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
                     color: task.isCompleted ? Colors.grey : Colors.black87,
                   ),
                 ),
@@ -214,8 +222,12 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
                   task.description,
                   style: TextStyle(
                     fontSize: 14,
-                    color: task.isCompleted ? Colors.grey : Colors.grey.shade700,
-                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                    color: task.isCompleted
+                        ? Colors.grey
+                        : Colors.grey.shade700,
+                    decoration: task.isCompleted
+                        ? TextDecoration.lineThrough
+                        : null,
                   ),
                 ),
                 SizedBox(height: 8),
@@ -239,7 +251,10 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
                     SizedBox(width: 8),
                     if (task.patientName != null)
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.blue.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(4),
@@ -266,7 +281,9 @@ class _TaskReminderPanelState extends State<TaskReminderPanel> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: isOverdue ? FontWeight.bold : null,
-                            color: isOverdue ? Colors.red : Colors.grey.shade600,
+                            color: isOverdue
+                                ? Colors.red
+                                : Colors.grey.shade600,
                           ),
                         ),
                       ],

@@ -8,9 +8,9 @@ class PatientListScreen extends StatefulWidget {
   final bool forProgressReport;
 
   const PatientListScreen({
-    Key? key, 
-    this.practitionerId, 
-    this.forProgressReport = false
+    Key? key,
+    this.practitionerId,
+    this.forProgressReport = false,
   }) : super(key: key);
 
   @override
@@ -38,36 +38,39 @@ class _PatientListScreenState extends State<PatientListScreen> {
   Future<void> _loadPatients() async {
     try {
       Query query = FirebaseFirestore.instance.collection('patients');
-      
+
       // If practitioner ID is provided, only load their patients
       if (widget.practitionerId != null) {
-        query = query.where('primaryPractitionerId', isEqualTo: widget.practitionerId);
+        query = query.where(
+          'primaryPractitionerId',
+          isEqualTo: widget.practitionerId,
+        );
       }
-      
+
       final snapshot = await query.get();
-      
+
       List<PatientModel> patients = [];
-      
+
       for (var doc in snapshot.docs) {
         final data = doc.data() as Map<String, dynamic>;
         data['uid'] = doc.id;
-        
+
         // Handle timestamps
         DateTime createdAt = DateTime.now();
         DateTime updatedAt = DateTime.now();
-        
+
         if (data.containsKey('createdAt') && data['createdAt'] != null) {
           if (data['createdAt'] is Timestamp) {
             createdAt = (data['createdAt'] as Timestamp).toDate();
           }
         }
-        
+
         if (data.containsKey('updatedAt') && data['updatedAt'] != null) {
           if (data['updatedAt'] is Timestamp) {
             updatedAt = (data['updatedAt'] as Timestamp).toDate();
           }
         }
-        
+
         final patient = PatientModel(
           uid: doc.id,
           email: data['email'] as String? ?? '',
@@ -85,10 +88,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
           profileImageUrl: data['profileImageUrl'] as String?,
           primaryPractitionerId: data['primaryPractitionerId'] as String?,
         );
-        
+
         patients.add(patient);
       }
-      
+
       setState(() {
         _patients = patients;
         _isLoading = false;
@@ -100,17 +103,17 @@ class _PatientListScreenState extends State<PatientListScreen> {
       });
     }
   }
-  
+
   List<PatientModel> get _filteredPatients {
     if (_searchQuery.isEmpty) {
       return _patients;
     }
-    
+
     return _patients.where((patient) {
       final fullName = patient.fullName.toLowerCase();
       final email = patient.email.toLowerCase();
       final query = _searchQuery.toLowerCase();
-      
+
       return fullName.contains(query) || email.contains(query);
     }).toList();
   }
@@ -120,11 +123,10 @@ class _PatientListScreenState extends State<PatientListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.forProgressReport ? 'Select Patient for Progress Report' : 'Patients',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          widget.forProgressReport
+              ? 'Select Patient for Progress Report'
+              : 'Patients',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         backgroundColor: Color(0xFF2E7D32),
         elevation: 0,
@@ -156,27 +158,27 @@ class _PatientListScreenState extends State<PatientListScreen> {
             child: _isLoading
                 ? Center(child: CircularProgressIndicator())
                 : _filteredPatients.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchQuery.isEmpty
-                              ? 'No patients found'
-                              : 'No patients match your search',
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      )
-                    : ListView.builder(
-                        itemCount: _filteredPatients.length,
-                        itemBuilder: (context, index) {
-                          final patient = _filteredPatients[index];
-                          return _buildPatientCard(patient);
-                        },
-                      ),
+                ? Center(
+                    child: Text(
+                      _searchQuery.isEmpty
+                          ? 'No patients found'
+                          : 'No patients match your search',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: _filteredPatients.length,
+                    itemBuilder: (context, index) {
+                      final patient = _filteredPatients[index];
+                      return _buildPatientCard(patient);
+                    },
+                  ),
           ),
         ],
       ),
     );
   }
-  
+
   Widget _buildPatientCard(PatientModel patient) {
     return Card(
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -188,9 +190,8 @@ class _PatientListScreenState extends State<PatientListScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PatientProgressReportScreen(
-                  patientId: patient.uid,
-                ),
+                builder: (context) =>
+                    PatientProgressReportScreen(patientId: patient.uid),
               ),
             );
           } else {
@@ -198,9 +199,8 @@ class _PatientListScreenState extends State<PatientListScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => PatientProgressReportScreen(
-                  patientId: patient.uid,
-                ),
+                builder: (context) =>
+                    PatientProgressReportScreen(patientId: patient.uid),
               ),
             );
           }
@@ -246,10 +246,7 @@ class _PatientListScreenState extends State<PatientListScreen> {
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey,
-              ),
+              Icon(Icons.chevron_right, color: Colors.grey),
             ],
           ),
         ),

@@ -16,15 +16,16 @@ class LoginScreen extends StatefulWidget {
   _LoginScreenState createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen>
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  
+
   bool _isLoading = false;
   bool _obscurePassword = true;
   String? _errorMessage;
-  
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
@@ -38,16 +39,19 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
       duration: Duration(milliseconds: 1500),
       vsync: this,
     );
-    
+
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
-    _slideAnimation = Tween<Offset>(
-      begin: Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
-    
+
+    _slideAnimation = Tween<Offset>(begin: Offset(0, 0.3), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _animationController,
+            curve: Curves.easeOutCubic,
+          ),
+        );
+
     _animationController.forward();
   }
 
@@ -65,11 +69,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           .collection('users')
           .doc(uid)
           .get();
-      
+
       if (userDoc.exists) {
         Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
         String role = userData['role'] ?? 'patient';
-        
+
         DocumentSnapshot roleDoc;
         if (role == 'practitioner') {
           roleDoc = await FirebaseFirestore.instance
@@ -82,33 +86,38 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
               .doc(uid)
               .get();
         }
-        
+
         if (roleDoc.exists) {
-          Map<String, dynamic> roleData = roleDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> roleData =
+              roleDoc.data() as Map<String, dynamic>;
           userData.addAll(roleData);
         }
-        
+
         return UserModel.fromFirestore(userData);
       }
-      
+
       DocumentSnapshot patientDoc = await FirebaseFirestore.instance
           .collection('patients')
           .doc(uid)
           .get();
-      
+
       if (patientDoc.exists) {
-        return UserModel.fromFirestore(patientDoc.data() as Map<String, dynamic>);
+        return UserModel.fromFirestore(
+          patientDoc.data() as Map<String, dynamic>,
+        );
       }
-      
+
       DocumentSnapshot practitionerDoc = await FirebaseFirestore.instance
           .collection('practitioners')
           .doc(uid)
           .get();
-      
+
       if (practitionerDoc.exists) {
-        return UserModel.fromFirestore(practitionerDoc.data() as Map<String, dynamic>);
+        return UserModel.fromFirestore(
+          practitionerDoc.data() as Map<String, dynamic>,
+        );
       }
-      
+
       return null;
     } catch (e) {
       print('Error fetching user data: $e');
@@ -118,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _navigateBasedOnRole(UserModel user) async {
     Widget dashboard;
-    
+
     switch (user.role) {
       case UserRole.admin:
         dashboard = const AdminDashboard();
@@ -135,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         dashboard = PatientDashboard(patientId: user.uid);
         break;
     }
-    
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => dashboard),
       (route) => false,
@@ -152,9 +161,13 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Your practitioner account is currently under review by our admin team.'),
+            Text(
+              'Your practitioner account is currently under review by our admin team.',
+            ),
             SizedBox(height: 16),
-            Text('You will be notified via email once your account is approved.'),
+            Text(
+              'You will be notified via email once your account is approved.',
+            ),
           ],
         ),
         actions: [
@@ -189,7 +202,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           TextButton(
             onPressed: () async {
               try {
-                await FirebaseAuth.instance.currentUser?.sendEmailVerification();
+                await FirebaseAuth.instance.currentUser
+                    ?.sendEmailVerification();
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('Verification email sent!'),
@@ -222,69 +236,74 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
   Future<UserModel?> _getUserByEmail(String email) async {
     try {
       print('Searching for user with email: $email');
-      
+
       QuerySnapshot userQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
-      
+
       if (userQuery.docs.isNotEmpty) {
-        Map<String, dynamic> userData = userQuery.docs.first.data() as Map<String, dynamic>;
+        Map<String, dynamic> userData =
+            userQuery.docs.first.data() as Map<String, dynamic>;
         String uid = userQuery.docs.first.id;
-        
+
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
-        
+
         userData['uid'] = uid;
         print('User found in users collection: $uid');
         return UserModel.fromFirestore(userData);
       }
-      
-      print('User not found in users collection, checking role-specific collections');
-      
+
+      print(
+        'User not found in users collection, checking role-specific collections',
+      );
+
       QuerySnapshot practitionerQuery = await FirebaseFirestore.instance
           .collection('practitioners')
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
-      
+
       if (practitionerQuery.docs.isNotEmpty) {
-        Map<String, dynamic> userData = practitionerQuery.docs.first.data() as Map<String, dynamic>;
+        Map<String, dynamic> userData =
+            practitionerQuery.docs.first.data() as Map<String, dynamic>;
         String uid = practitionerQuery.docs.first.id;
-        
+
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
-        
+
         userData['uid'] = uid;
         print('User found in practitioners collection: $uid');
         return UserModel.fromFirestore(userData);
       }
-      
+
       QuerySnapshot patientQuery = await FirebaseFirestore.instance
           .collection('patients')
           .where('email', isEqualTo: email)
           .limit(1)
           .get();
-      
+
       if (patientQuery.docs.isNotEmpty) {
-        Map<String, dynamic> userData = patientQuery.docs.first.data() as Map<String, dynamic>;
+        Map<String, dynamic> userData =
+            patientQuery.docs.first.data() as Map<String, dynamic>;
         String uid = patientQuery.docs.first.id;
-        
+
         if (userData['password'] != _passwordController.text) {
           print('Password mismatch');
           return null;
         }
-        
+
         userData['uid'] = uid;
         print('User found in patients collection: $uid');
         return UserModel.fromFirestore(userData);
       }
-      
+
       print('User not found in any collection');
       return null;
     } catch (e) {
@@ -295,20 +314,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-    
+
     try {
-      final UserModel? user = await _getUserByEmail(_emailController.text.trim());
-      
+      final UserModel? user = await _getUserByEmail(
+        _emailController.text.trim(),
+      );
+
       if (user != null) {
         print('User found, proceeding with login');
-        
+
         await _updateLastLogin(user.uid, user.role);
-        
+
         if (user.role == UserRole.admin) {
           Navigator.pushReplacement(
             context,
@@ -323,15 +344,20 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
           //   });
           //   return;
           // }
-          
+
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => PractitionerMainDashboard(practitionerId: user.uid)),
+            MaterialPageRoute(
+              builder: (context) =>
+                  PractitionerMainDashboard(practitionerId: user.uid),
+            ),
           );
         } else {
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => PatientDashboard(patientId: user.uid)),
+            MaterialPageRoute(
+              builder: (context) => PatientDashboard(patientId: user.uid),
+            ),
           );
         }
       } else {
@@ -351,19 +377,15 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
 
   Future<void> _updateLastLogin(String uid, UserRole role) async {
     try {
-      final String collection = role == UserRole.practitioner ? 'practitioners' : 'patients';
-      await FirebaseFirestore.instance
-          .collection(collection)
-          .doc(uid)
-          .update({
+      final String collection = role == UserRole.practitioner
+          ? 'practitioners'
+          : 'patients';
+      await FirebaseFirestore.instance.collection(collection).doc(uid).update({
         'lastLoginAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(uid)
-          .update({
+
+      await FirebaseFirestore.instance.collection('users').doc(uid).update({
         'lastLoginAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       });
@@ -483,7 +505,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                   ),
                 ),
               ),
-              
+
               SlideTransition(
                 position: _slideAnimation,
                 child: FadeTransition(
@@ -496,7 +518,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SizedBox(height: 20),
-                          
+
                           Text(
                             'Welcome Back',
                             style: TextStyle(
@@ -506,9 +528,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          
+
                           SizedBox(height: 8),
-                          
+
                           Text(
                             'Sign in to continue your wellness journey',
                             style: TextStyle(
@@ -517,9 +539,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             ),
                             textAlign: TextAlign.center,
                           ),
-                          
+
                           SizedBox(height: 32),
-                          
+
                           if (_errorMessage != null)
                             Container(
                               padding: EdgeInsets.all(16),
@@ -531,7 +553,10 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                               child: Row(
                                 children: [
-                                  Icon(Icons.error_outline, color: Colors.red[700]),
+                                  Icon(
+                                    Icons.error_outline,
+                                    color: Colors.red[700],
+                                  ),
                                   SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
@@ -542,21 +567,24 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ],
                               ),
                             ),
-                          
+
                           _buildTextField(
                             controller: _emailController,
                             label: 'Email Address',
                             icon: Icons.email_outlined,
                             keyboardType: TextInputType.emailAddress,
                             validator: (value) {
-                              if (value?.isEmpty == true) return 'Email is required';
-                              if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value!)) {
+                              if (value?.isEmpty == true)
+                                return 'Email is required';
+                              if (!RegExp(
+                                r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                              ).hasMatch(value!)) {
                                 return 'Enter a valid email address';
                               }
                               return null;
                             },
                           ),
-                          
+
                           _buildTextField(
                             controller: _passwordController,
                             label: 'Password',
@@ -564,17 +592,22 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             obscureText: _obscurePassword,
                             suffixIcon: IconButton(
                               icon: Icon(
-                                _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                                _obscurePassword
+                                    ? Icons.visibility
+                                    : Icons.visibility_off,
                                 color: Color(0xFF2E7D32),
                               ),
-                              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword,
+                              ),
                             ),
                             validator: (value) {
-                              if (value?.isEmpty == true) return 'Password is required';
+                              if (value?.isEmpty == true)
+                                return 'Password is required';
                               return null;
                             },
                           ),
-                          
+
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
@@ -582,7 +615,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const ForgotPasswordScreen(),
+                                    builder: (context) =>
+                                        const ForgotPasswordScreen(),
                                   ),
                                 );
                               },
@@ -595,9 +629,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ),
                           ),
-                          
+
                           SizedBox(height: 24),
-                          
+
                           ElevatedButton(
                             onPressed: _isLoading ? null : _login,
                             style: ElevatedButton.styleFrom(
@@ -633,9 +667,9 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                     ),
                                   ),
                           ),
-                          
+
                           SizedBox(height: 24),
-                          
+
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -648,7 +682,8 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const SignupScreen(),
+                                      builder: (context) =>
+                                          const SignupScreen(),
                                     ),
                                   );
                                 },
@@ -662,13 +697,17 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                               ),
                             ],
                           ),
-                          
+
                           SizedBox(height: 32),
-                          
+
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.eco, color: Color(0xFF2E7D32), size: 16),
+                              Icon(
+                                Icons.eco,
+                                color: Color(0xFF2E7D32),
+                                size: 16,
+                              ),
                               SizedBox(width: 8),
                               Text(
                                 'Nurturing wellness through ancient wisdom',
@@ -679,7 +718,11 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                                 ),
                               ),
                               SizedBox(width: 8),
-                              Icon(Icons.eco, color: Color(0xFF2E7D32), size: 16),
+                              Icon(
+                                Icons.eco,
+                                color: Color(0xFF2E7D32),
+                                size: 16,
+                              ),
                             ],
                           ),
                         ],

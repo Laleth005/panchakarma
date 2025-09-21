@@ -6,10 +6,12 @@ class PractitionerApprovalScreen extends StatefulWidget {
   const PractitionerApprovalScreen({Key? key}) : super(key: key);
 
   @override
-  _PractitionerApprovalScreenState createState() => _PractitionerApprovalScreenState();
+  _PractitionerApprovalScreenState createState() =>
+      _PractitionerApprovalScreenState();
 }
 
-class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen> {
+class _PractitionerApprovalScreenState
+    extends State<PractitionerApprovalScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   bool _isLoading = true;
   List<Map<String, dynamic>> _pendingPractitioners = [];
@@ -28,15 +30,17 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
 
     try {
       // Get all practitioners
-      QuerySnapshot snapshot = await _firestore.collection('practitioners').get();
-      
+      QuerySnapshot snapshot = await _firestore
+          .collection('practitioners')
+          .get();
+
       List<Map<String, dynamic>> pendingList = [];
       List<Map<String, dynamic>> approvedList = [];
-      
+
       for (var doc in snapshot.docs) {
         Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
         data['id'] = doc.id; // Add document ID
-        
+
         bool isApproved = data['isApproved'] ?? false;
         if (isApproved) {
           approvedList.add(data);
@@ -44,7 +48,7 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
           pendingList.add(data);
         }
       }
-      
+
       setState(() {
         _pendingPractitioners = pendingList;
         _approvedPractitioners = approvedList;
@@ -64,10 +68,10 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
         'isApproved': true,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-      
+
       // Reload practitioners after approval
       _loadPractitioners();
-      
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Practitioner approved successfully')),
@@ -83,35 +87,39 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
   Future<void> _rejectPractitioner(String practitionerId) async {
     try {
       // Show confirmation dialog
-      bool confirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Reject Practitioner'),
-          content: Text('Are you sure you want to reject this practitioner? This will delete their account.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: Text('Cancel'),
+      bool confirm =
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text('Reject Practitioner'),
+              content: Text(
+                'Are you sure you want to reject this practitioner? This will delete their account.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text('Reject', style: TextStyle(color: Colors.red)),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: Text('Reject', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      ) ?? false;
-      
+          ) ??
+          false;
+
       if (!confirm) return;
-      
+
       // Delete from practitioners collection
       await _firestore.collection('practitioners').doc(practitionerId).delete();
-      
+
       // Delete from users collection too
       await _firestore.collection('users').doc(practitionerId).delete();
-      
+
       // Reload practitioners after rejection
       _loadPractitioners();
-      
+
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Practitioner rejected successfully')),
@@ -130,7 +138,10 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Practitioner Approval', style: TextStyle(color: Colors.white)),
+          title: Text(
+            'Practitioner Approval',
+            style: TextStyle(color: Colors.white),
+          ),
           backgroundColor: Color(0xFF2E7D32),
           bottom: TabBar(
             indicatorColor: Colors.white,
@@ -153,15 +164,24 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
             ? Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
             : TabBarView(
                 children: [
-                  _buildPractitionerList(_pendingPractitioners, isPending: true),
-                  _buildPractitionerList(_approvedPractitioners, isPending: false),
+                  _buildPractitionerList(
+                    _pendingPractitioners,
+                    isPending: true,
+                  ),
+                  _buildPractitionerList(
+                    _approvedPractitioners,
+                    isPending: false,
+                  ),
                 ],
               ),
       ),
     );
   }
 
-  Widget _buildPractitionerList(List<Map<String, dynamic>> practitioners, {required bool isPending}) {
+  Widget _buildPractitionerList(
+    List<Map<String, dynamic>> practitioners, {
+    required bool isPending,
+  }) {
     if (practitioners.isEmpty) {
       return Center(
         child: Column(
@@ -177,10 +197,7 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
               isPending
                   ? 'No pending practitioners'
                   : 'No approved practitioners',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
             ),
           ],
         ),
@@ -197,34 +214,30 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
     );
   }
 
-  Widget _buildPractitionerCard(Map<String, dynamic> practitioner, bool isPending) {
+  Widget _buildPractitionerCard(
+    Map<String, dynamic> practitioner,
+    bool isPending,
+  ) {
     final String name = practitioner['fullName'] ?? 'Unknown';
     final String email = practitioner['email'] ?? 'No email';
     final String phone = practitioner['phoneNumber'] ?? 'No phone';
     final List<dynamic> specialties = practitioner['specialties'] ?? [];
-    final String qualification = practitioner['qualification'] ?? 'Not specified';
+    final String qualification =
+        practitioner['qualification'] ?? 'Not specified';
     final String experience = practitioner['experience'] ?? 'Not specified';
-    
+
     return Card(
       margin: EdgeInsets.only(bottom: 16),
       elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: ExpansionTile(
         title: Text(
           name,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 16,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Text(
           email,
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
         ),
         leading: CircleAvatar(
           backgroundColor: Color(0xFF2E7D32).withOpacity(0.2),
@@ -244,19 +257,25 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
               children: [
                 _buildInfoRow(Icons.phone, 'Phone', phone),
                 SizedBox(height: 8),
-                _buildInfoRow(Icons.medical_services, 'Specialties', 
-                    specialties.isEmpty ? 'None specified' : specialties.join(', ')),
+                _buildInfoRow(
+                  Icons.medical_services,
+                  'Specialties',
+                  specialties.isEmpty
+                      ? 'None specified'
+                      : specialties.join(', '),
+                ),
                 SizedBox(height: 8),
                 _buildInfoRow(Icons.school, 'Qualification', qualification),
                 SizedBox(height: 8),
                 _buildInfoRow(Icons.work, 'Experience', experience),
                 SizedBox(height: 16),
-                if (isPending) 
+                if (isPending)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       OutlinedButton(
-                        onPressed: () => _rejectPractitioner(practitioner['id']),
+                        onPressed: () =>
+                            _rejectPractitioner(practitioner['id']),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.red,
                           side: BorderSide(color: Colors.red),
@@ -265,7 +284,8 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
                       ),
                       SizedBox(width: 12),
                       ElevatedButton(
-                        onPressed: () => _approvePractitioner(practitioner['id']),
+                        onPressed: () =>
+                            _approvePractitioner(practitioner['id']),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Color(0xFF2E7D32),
                           foregroundColor: Colors.white,
@@ -292,19 +312,8 @@ class _PractitionerApprovalScreenState extends State<PractitionerApprovalScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey,
-                ),
-              ),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 14,
-                ),
-              ),
+              Text(label, style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(value, style: TextStyle(fontSize: 14)),
             ],
           ),
         ),

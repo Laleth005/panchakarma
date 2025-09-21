@@ -4,7 +4,7 @@ enum NotificationType {
   sessionReminder,
   patientAlert,
   procedurePrecaution,
-  general
+  general,
 }
 
 extension NotificationTypeExtension on NotificationType {
@@ -20,7 +20,7 @@ extension NotificationTypeExtension on NotificationType {
         return 'General';
     }
   }
-  
+
   String get icon {
     switch (this) {
       case NotificationType.sessionReminder:

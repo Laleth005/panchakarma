@@ -36,20 +36,20 @@ class UserModel {
       ),
       phoneNumber: json['phoneNumber'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
-      createdAt: (json['createdAt'] != null) 
-          ? (json['createdAt'] is Timestamp 
-              ? (json['createdAt'] as Timestamp).toDate() 
-              : DateTime.parse(json['createdAt'].toString()))
+      createdAt: (json['createdAt'] != null)
+          ? (json['createdAt'] is Timestamp
+                ? (json['createdAt'] as Timestamp).toDate()
+                : DateTime.parse(json['createdAt'].toString()))
           : DateTime.now(),
-      updatedAt: (json['updatedAt'] != null) 
-          ? (json['updatedAt'] is Timestamp 
-              ? (json['updatedAt'] as Timestamp).toDate() 
-              : DateTime.parse(json['updatedAt'].toString()))
+      updatedAt: (json['updatedAt'] != null)
+          ? (json['updatedAt'] is Timestamp
+                ? (json['updatedAt'] as Timestamp).toDate()
+                : DateTime.parse(json['updatedAt'].toString()))
           : DateTime.now(),
       isApproved: json['isApproved'] as bool?,
     );
   }
-  
+
   // Add fromFirestore method for Firestore document data
   factory UserModel.fromFirestore(Map<String, dynamic> data) {
     return UserModel(
@@ -64,16 +64,16 @@ class UserModel {
       isApproved: data['isApproved'] as bool?,
     );
   }
-  
+
   static UserRole _parseRole(dynamic roleData) {
     if (roleData == null) return UserRole.patient;
-    
+
     final String roleStr = roleData.toString().toLowerCase();
     if (roleStr.contains('admin')) return UserRole.admin;
     if (roleStr.contains('practitioner')) return UserRole.practitioner;
     return UserRole.patient;
   }
-  
+
   static DateTime? _parseDateTime(dynamic dateData) {
     if (dateData == null) return null;
     if (dateData is Timestamp) return dateData.toDate();

@@ -8,7 +8,7 @@ class PatientModel extends UserModel {
   final String? allergies;
   final String? doshaType; // Vata, Pitta, Kapha, or combination
   final String? primaryPractitionerId;
-  
+
   PatientModel({
     required super.uid,
     required super.email,
@@ -25,7 +25,7 @@ class PatientModel extends UserModel {
     required super.createdAt,
     required super.updatedAt,
   }) : super(role: UserRole.patient);
-  
+
   factory PatientModel.fromJson(Map<String, dynamic> json) {
     final userModel = UserModel.fromJson(json);
     return PatientModel(
@@ -45,7 +45,7 @@ class PatientModel extends UserModel {
       updatedAt: userModel.updatedAt,
     );
   }
-  
+
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
